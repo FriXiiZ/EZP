@@ -1,0 +1,386 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:EFP.Desktop"
+        x:Class="EFP.Desktop.MainWindow"
+        x:DataType="local:MainWindow"
+        Title="EZP — EazyPrinter"
+        Icon="/Assets/efp.ico"
+        Width="1000" Height="720" MinWidth="760" MinHeight="560"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource Page}"
+        DragDrop.AllowDrop="True">
+
+    <Window.Resources>
+        <StreamGeometry x:Key="IconSearch">M10,2 A8,8 0 1 0 15.3,16.7 L21,22.4 22.4,21 16.7,15.3 A8,8 0 0 0 10,2 Z M10,4 A6,6 0 1 1 10,16 A6,6 0 0 1 10,4 Z</StreamGeometry>
+        <StreamGeometry x:Key="IconDownload">M11,3 H13 V13.2 L16.6,9.6 18,11 12,17 6,11 7.4,9.6 11,13.2 Z M5,19 H19 V21 H5 Z</StreamGeometry>
+        <StreamGeometry x:Key="IconMoon">M12.5,2 A10,10 0 1 0 22,13.5 A8,8 0 0 1 12.5,2 Z</StreamGeometry>
+        <StreamGeometry x:Key="IconSun">M12,7 A5,5 0 1 0 12,17 A5,5 0 1 0 12,7 Z M11,1 H13 V4 H11 Z M11,20 H13 V23 H11 Z M1,11 H4 V13 H1 Z M20,11 H23 V13 H20 Z M4.2,5.6 5.6,4.2 7.7,6.3 6.3,7.7 Z M16.3,17.7 17.7,16.3 19.8,18.4 18.4,19.8 Z M4.2,18.4 6.3,16.3 7.7,17.7 5.6,19.8 Z M16.3,6.3 18.4,4.2 19.8,5.6 17.7,7.7 Z</StreamGeometry>
+        <StreamGeometry x:Key="IconCheck">M9,16.2 4.8,12 3.4,13.4 9,19 21,7 19.6,5.6 Z</StreamGeometry>
+        <StreamGeometry x:Key="IconCross">M6.4,5 5,6.4 10.6,12 5,17.6 6.4,19 12,13.4 17.6,19 19,17.6 13.4,12 19,6.4 17.6,5 12,10.6 Z</StreamGeometry>
+        <StreamGeometry x:Key="IconList">M3,5 H5 V7 H3 Z M7,5 H21 V7 H7 Z M3,11 H5 V13 H3 Z M7,11 H21 V13 H7 Z M3,17 H5 V19 H3 Z M7,17 H21 V19 H7 Z</StreamGeometry>
+        <StreamGeometry x:Key="IconBang">M11,4 H13 V15 H11 Z M11,17 H13 V20 H11 Z</StreamGeometry>
+    </Window.Resources>
+
+    <Window.Styles>
+        <!-- Tuiles -->
+        <Style Selector="Border.tile">
+            <Setter Property="Background" Value="{DynamicResource Surface}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource CardLine}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.15"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Border.tile:pointerover">
+            <Setter Property="BorderBrush" Value="{DynamicResource HoverLine}"/>
+        </Style>
+        <Style Selector="Border.tile.current">
+            <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
+            <Setter Property="BorderThickness" Value="2"/>
+        </Style>
+
+        <!-- Pastille d'état sous le nom -->
+        <Style Selector="Border.pill">
+            <Setter Property="Background" Value="{DynamicResource PillBg}"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="10,3"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Border.pill > TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+            <Setter Property="MaxWidth" Value="165"/>
+        </Style>
+        <Style Selector="Border.pill.outdated"><Setter Property="Background" Value="{DynamicResource WarnBg}"/></Style>
+        <Style Selector="Border.pill.outdated > TextBlock"><Setter Property="Foreground" Value="{DynamicResource WarnText}"/></Style>
+        <Style Selector="Border.pill.warn"><Setter Property="Background" Value="{DynamicResource WarnBg}"/></Style>
+        <Style Selector="Border.pill.warn > TextBlock"><Setter Property="Foreground" Value="{DynamicResource WarnText}"/></Style>
+        <Style Selector="Border.pill.done"><Setter Property="Background" Value="{DynamicResource OkBg}"/></Style>
+        <Style Selector="Border.pill.done > TextBlock"><Setter Property="Foreground" Value="{DynamicResource OkText}"/></Style>
+        <Style Selector="Border.pill.fail"><Setter Property="Background" Value="{DynamicResource FailBg}"/></Style>
+        <Style Selector="Border.pill.fail > TextBlock"><Setter Property="Foreground" Value="{DynamicResource FailText}"/></Style>
+
+        <!-- Fond rond de l'icône -->
+        <Style Selector="Ellipse.iconbg"><Setter Property="Fill" Value="{DynamicResource IconBg}"/></Style>
+        <Style Selector="Ellipse.iconbg.done"><Setter Property="Fill" Value="{DynamicResource OkBg}"/></Style>
+        <Style Selector="Ellipse.iconbg.fail"><Setter Property="Fill" Value="{DynamicResource FailBg}"/></Style>
+
+        <!-- Anneau de progression -->
+        <Style Selector="Arc.ring"><Setter Property="Stroke" Value="{StaticResource BrandGradient}"/></Style>
+        <Style Selector="Arc.ring.fail"><Setter Property="Stroke" Value="{DynamicResource FailStrong}"/></Style>
+        <Style Selector="Arc.spinner">
+            <Setter Property="Stroke" Value="{StaticResource BrandGradient}"/>
+            <Style.Animations>
+                <Animation Duration="0:0:1.1" IterationCount="Infinite">
+                    <KeyFrame Cue="0%"><Setter Property="RotateTransform.Angle" Value="0"/></KeyFrame>
+                    <KeyFrame Cue="100%"><Setter Property="RotateTransform.Angle" Value="360"/></KeyFrame>
+                </Animation>
+            </Style.Animations>
+        </Style>
+
+        <!-- Pastille ✓ / ! / ✕ sur l'icône -->
+        <Style Selector="Border.badge">
+            <Setter Property="Background" Value="{DynamicResource OkStrong}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Surface}"/>
+        </Style>
+        <Style Selector="Border.badge.warn"><Setter Property="Background" Value="{DynamicResource WarnStrong}"/></Style>
+        <Style Selector="Border.badge.fail"><Setter Property="Background" Value="{DynamicResource FailStrong}"/></Style>
+
+        <!-- Point discret : déjà installée ici (vert) / pilote à mettre à jour (orange) -->
+        <Style Selector="Ellipse.dot"><Setter Property="Fill" Value="{DynamicResource OkStrong}"/></Style>
+        <Style Selector="Ellipse.dot.outdated"><Setter Property="Fill" Value="{DynamicResource WarnStrong}"/></Style>
+    </Window.Styles>
+
+    <Panel>
+        <DockPanel>
+            <!-- Barre d'état -->
+            <Border DockPanel.Dock="Bottom" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource CardLine}" BorderThickness="0,1,0,0" Padding="22,7">
+                <DockPanel>
+                    <TextBlock x:Name="LibraryText" DockPanel.Dock="Right" Foreground="{DynamicResource Muted}" FontSize="12"/>
+                    <Ellipse Width="8" Height="8" Fill="{StaticResource BrandGradient}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="StatusText" Text="Prêt" Foreground="{DynamicResource Ink}" FontSize="12" TextTrimming="CharacterEllipsis"/>
+                </DockPanel>
+            </Border>
+
+            <Grid Margin="22,18,22,12" RowDefinitions="Auto,Auto,*,Auto">
+                <!-- En-tête -->
+                <DockPanel Margin="0,0,0,14">
+                    <Button x:Name="ThemeButton" DockPanel.Dock="Right" Margin="8,0,0,0" Width="40" Height="40" Padding="0" VerticalAlignment="Center"
+                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center" ToolTip.Tip="Mode clair / sombre">
+                        <PathIcon x:Name="ThemeIcon" Width="16" Height="16" Data="{StaticResource IconMoon}"/>
+                    </Button>
+                    <ToggleButton x:Name="DriversTabButton" DockPanel.Dock="Right" Height="40" Padding="14,0" VerticalAlignment="Center" VerticalContentAlignment="Center"
+                                  ToolTip.Tip="Tous les pilotes disponibles, triés par marque">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <PathIcon Data="{StaticResource IconList}" Width="14" Height="14"/>
+                            <TextBlock x:Name="DriversTabText" Text="Pilotes"/>
+                        </StackPanel>
+                    </ToggleButton>
+                    <Image Source="/Assets/efp-logo.png" Width="44" Height="44" Margin="0,0,14,0" VerticalAlignment="Center"/>
+                    <StackPanel VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="EZP" FontWeight="Bold" FontSize="24" Foreground="{StaticResource BrandGradient}"/>
+                            <TextBlock Text="EazyPrinter · imprimantes en 3 clics" Classes="hint" FontSize="13" VerticalAlignment="Bottom" Margin="10,0,0,4"/>
+                        </StackPanel>
+                        <TextBlock x:Name="SelectionCountText" Classes="hint" FontSize="13" Margin="0,1,0,0"
+                                   Text="Clique sur une imprimante pour l'installer, Ctrl + clic pour en choisir plusieurs."/>
+                        <TextBlock x:Name="AdminWarningText" Foreground="{DynamicResource FailStrong}" FontSize="12.5" Margin="0,4,0,0" IsVisible="False"
+                                   Text="Lancé sans droits administrateur : l'installation échouera."/>
+                    </StackPanel>
+                </DockPanel>
+
+                <!-- Recherche : un seul champ (réseau ou IP d'une imprimante) -->
+                <Border Grid.Row="1" Classes="card" Padding="14,12" Margin="0,0,0,14">
+                    <StackPanel>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBox x:Name="RangeBox" FontSize="14" VerticalContentAlignment="Center"
+                                     Watermark="192.168.1.0/24, 192.168.1.10-60 ou l'IP d'une imprimante"
+                                     ToolTip.Tip="Le réseau à scanner ou directement l'IP d'une imprimante. Entrée = lancer."/>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="10,0,0,0">
+                                <Button x:Name="ScanButton" Classes="primary" MinWidth="130">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <PathIcon Data="{StaticResource IconSearch}" Width="14" Height="14" Foreground="White"/>
+                                        <TextBlock Text="Rechercher" Foreground="White"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button x:Name="StopButton" Content="Arrêter" IsEnabled="False" Margin="8,0,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                        <TextBlock Classes="hint" FontSize="12" Margin="2,6,0,0" Text="Réseau à scanner, ou l'IP d'une imprimante si elle n'apparaît pas."/>
+                        <ProgressBar x:Name="ScanProgressBar" Height="3" MinHeight="3" Margin="0,8,0,0" Minimum="0" Maximum="1"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Tuiles + menu -->
+                <Panel Grid.Row="2">
+                    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <ItemsControl x:Name="PrinterTiles">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="local:PrinterTile">
+                                        <Border Classes="tile" Classes.current="{Binding IsCurrent}" Width="196" Height="200" Margin="0,0,12,12"
+                                                ToolTip.Tip="{Binding Tooltip}" Background="{DynamicResource Surface}">
+                                            <Panel Margin="14">
+                                                <Ellipse Classes="dot" Classes.outdated="{Binding NeedsDriverUpdate}" Width="10" Height="10"
+                                                         HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-2,-2,0"
+                                                         IsVisible="{Binding IsInstalledHere}" ToolTip.Tip="{Binding DotTooltip}"/>
+                                                <StackPanel VerticalAlignment="Center">
+                                                    <Panel Width="76" Height="76" Margin="0,0,0,12">
+                                                        <Ellipse Stroke="{DynamicResource RingTrack}" StrokeThickness="4"/>
+                                                        <Arc Classes="ring" Classes.fail="{Binding IsFailed}" StartAngle="-90" SweepAngle="{Binding SweepAngle}"
+                                                             StrokeThickness="4" StrokeLineCap="Round" IsVisible="{Binding HasProgress}" Margin="2"/>
+                                                        <Arc Classes="spinner" StartAngle="-90" SweepAngle="70" StrokeThickness="4" StrokeLineCap="Round"
+                                                             IsVisible="{Binding Spinning}" Margin="2">
+                                                            <Arc.RenderTransform><RotateTransform/></Arc.RenderTransform>
+                                                        </Arc>
+                                                        <Ellipse Classes="iconbg" Classes.done="{Binding IsDone}" Classes.fail="{Binding IsFailed}" Width="62" Height="62"/>
+                                                        <Image Source="{Binding Icon}" Width="50" Height="50"/>
+                                                        <Border Classes="badge" Classes.warn="{Binding IsWarning}" Classes.fail="{Binding IsFailed}"
+                                                                Width="24" Height="24" CornerRadius="12" BorderThickness="2"
+                                                                HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-2,-2" IsVisible="{Binding HasBadge}">
+                                                            <Panel>
+                                                                <PathIcon Data="{StaticResource IconCheck}" Width="11" Height="11" Foreground="White" IsVisible="{Binding IsDone}"/>
+                                                                <PathIcon Data="{StaticResource IconBang}" Width="11" Height="11" Foreground="White" IsVisible="{Binding IsWarning}"/>
+                                                                <PathIcon Data="{StaticResource IconCross}" Width="11" Height="11" Foreground="White" IsVisible="{Binding IsFailed}"/>
+                                                            </Panel>
+                                                        </Border>
+                                                    </Panel>
+                                                    <TextBlock Text="{Binding TileTitle}" FontWeight="SemiBold" FontSize="14.5" HorizontalAlignment="Center"
+                                                               TextTrimming="CharacterEllipsis" Foreground="{DynamicResource Ink}"/>
+                                                    <TextBlock Text="{Binding TileSubtitle}" Foreground="{DynamicResource Muted}" FontSize="12.5" HorizontalAlignment="Center"
+                                                               TextTrimming="CharacterEllipsis" Margin="0,1,0,0"/>
+                                                    <Border Classes="pill" Classes.outdated="{Binding NeedsDriverUpdate}" Classes.done="{Binding IsDone}"
+                                                            Classes.warn="{Binding IsWarning}" Classes.fail="{Binding IsFailed}" Margin="0,10,0,0">
+                                                        <TextBlock Text="{Binding StateText}"/>
+                                                    </Border>
+                                                </StackPanel>
+                                            </Panel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <!-- Menu de la tuile ouverte -->
+                            <Border x:Name="DetailPanel" Classes="card" IsVisible="False" Margin="0,0,12,12" x:DataType="local:PrinterTile">
+                                <Grid ColumnDefinitions="*,24,Auto">
+                                    <Grid ColumnDefinitions="140,*" RowDefinitions="38,38,38,32,Auto,Auto">
+                                        <TextBlock Text="Adresse IP" Classes="label"/>
+                                        <TextBox x:Name="DetailIpBox" Grid.Column="1" Classes="inline" Text="{Binding Ip, UpdateSourceTrigger=LostFocus}" IsReadOnly="True"
+                                                 ToolTip.Tip="Double-clic pour modifier, Entrée pour valider"/>
+                                        <TextBlock Grid.Row="1" Text="Nom" Classes="label"/>
+                                        <TextBox x:Name="DetailNameBox" Grid.Row="1" Grid.Column="1" Classes="inline" Text="{Binding WindowsName, UpdateSourceTrigger=LostFocus}" IsReadOnly="True"
+                                                 ToolTip.Tip="Double-clic pour modifier, Entrée pour valider"/>
+                                        <TextBlock Grid.Row="2" Text="Pilote" Classes="label"/>
+                                        <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding Drivers}" SelectedItem="{Binding SelectedDriver}"
+                                                  HorizontalAlignment="Stretch" VerticalAlignment="Center">
+                                            <ComboBox.ItemTemplate>
+                                                <DataTemplate x:DataType="local:DriverOption">
+                                                    <TextBlock Text="{Binding Display}" TextTrimming="CharacterEllipsis"/>
+                                                </DataTemplate>
+                                            </ComboBox.ItemTemplate>
+                                        </ComboBox>
+                                        <TextBlock Grid.Row="3" Text="N° de série · MAC" Classes="label"/>
+                                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SerialAndMac}" VerticalAlignment="Center" Margin="11,0,0,0"
+                                                   Foreground="{DynamicResource Ink}"/>
+                                        <TextBlock Grid.Row="4" Text="Sur ce poste" Classes="label" VerticalAlignment="Top" Margin="0,8,0,0"/>
+                                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding HereText}" TextWrapping="Wrap" Margin="11,8,0,0" Foreground="{DynamicResource Ink}"/>
+                                        <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding DriverNote}" TextWrapping="Wrap" Margin="11,6,0,0"
+                                                   Foreground="{DynamicResource Accent}" FontSize="12.5"/>
+                                    </Grid>
+                                    <StackPanel Grid.Column="2" VerticalAlignment="Center" Width="230">
+                                        <Button x:Name="DetailInstallButton" Classes="primary" Padding="16,12" FontSize="14.5" HorizontalAlignment="Stretch">
+                                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                                <PathIcon Data="{StaticResource IconDownload}" Width="14" Height="14" Foreground="White"/>
+                                                <TextBlock Text="{Binding InstallLabel}" Foreground="White"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <TextBlock Text="Double-clic sur l'IP ou le nom pour les modifier." Classes="hint" FontSize="12" TextAlignment="Center" Margin="0,8,0,0"/>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="6" Margin="0,8,0,0">
+                                            <Button x:Name="ImportDriverButton" Content="Importer un pilote…" Padding="10,4" FontSize="12.5"
+                                                    ToolTip.Tip="Pilote introuvable en ligne ? Choisis un fichier (ou glisse-le sur la fenêtre)."/>
+                                            <Button x:Name="ImportFolderButton" Content="Dossier…" Padding="10,4" FontSize="12.5"
+                                                    ToolTip.Tip="Importer un dossier de pilote déjà extrait."/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <!-- Plusieurs tuiles sélectionnées (Ctrl + clic) -->
+                            <Border x:Name="MultiPanel" Classes="card" IsVisible="False" Margin="0,0,12,12">
+                                <DockPanel>
+                                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Spacing="8">
+                                        <Button x:Name="MultiClearButton" Content="Désélectionner"/>
+                                        <Button x:Name="MultiInstallButton" Classes="primary" Padding="18,11" FontSize="14.5">
+                                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                                <PathIcon Data="{StaticResource IconDownload}" Width="14" Height="14" Foreground="White"/>
+                                                <TextBlock x:Name="MultiInstallText" Text="Installer" Foreground="White"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                    <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                                        <TextBlock x:Name="MultiTitle" Classes="title"/>
+                                        <TextBlock x:Name="MultiText" Classes="hint" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" Margin="0,3,0,0"/>
+                                        <TextBlock Classes="hint" FontSize="12" Margin="0,3,0,0"
+                                                   Text="Pilotes téléchargés au moment d'installer, une fois par marque. Ctrl + clic pour ajouter ou retirer une imprimante."/>
+                                    </StackPanel>
+                                </DockPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <StackPanel x:Name="EmptyHint" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False">
+                        <Image Source="/Assets/printer.png" Width="56" Height="56" Opacity="0.35" HorizontalAlignment="Center"/>
+                        <TextBlock x:Name="EmptyHintTitle" Text="Recherche des imprimantes…" HorizontalAlignment="Center" FontWeight="SemiBold" FontSize="15"
+                                   Foreground="{DynamicResource Ink}" Margin="0,10,0,0"/>
+                        <TextBlock Text="Rien ne s'affiche ? Tape l'IP de l'imprimante dans le champ du haut." HorizontalAlignment="Center"
+                                   TextAlignment="Center" Classes="hint" MaxWidth="460" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Panel>
+
+
+                <!-- Onglet Pilotes : tous les pilotes disponibles, triés par marque -->
+                <Border x:Name="DriversPage" Grid.Row="1" Grid.RowSpan="2" Classes="card" Padding="0" IsVisible="False">
+                    <DockPanel>
+                        <Border DockPanel.Dock="Top" Padding="16,14" BorderBrush="{DynamicResource CardLine}" BorderThickness="0,0,0,1">
+                            <StackPanel Spacing="8">
+                                <Grid ColumnDefinitions="*,10,200">
+                                    <TextBox x:Name="DriverSearchBox" FontSize="14" Watermark="Rechercher un pilote : modèle, marque, série… (ex. L3760, M404, bizhub)"/>
+                                    <ComboBox x:Name="BrandFilter" Grid.Column="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                                </Grid>
+                                <DockPanel>
+                                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6">
+                                        <Button x:Name="ExpandAllButton" Content="Tout ouvrir" Padding="10,3" FontSize="12"/>
+                                        <Button x:Name="CollapseAllButton" Content="Tout fermer" Padding="10,3" FontSize="12"/>
+                                    </StackPanel>
+                                    <TextBlock x:Name="DriverCountText" Classes="hint" FontSize="12" VerticalAlignment="Center"/>
+                                </DockPanel>
+                            </StackPanel>
+                        </Border>
+                        <Border DockPanel.Dock="Bottom" Padding="16,12" BorderBrush="{DynamicResource CardLine}" BorderThickness="0,1,0,0">
+                            <DockPanel>
+                                <Button x:Name="UseDriverButton" DockPanel.Dock="Right" Classes="primary" Content="Utiliser pour l'imprimante" IsEnabled="False"/>
+                                <TextBlock x:Name="UseDriverHint" Classes="hint" VerticalAlignment="Center" Margin="0,0,12,0"
+                                           Text="Choisis une imprimante dans « Imprimantes », puis un pilote ici (double-clic ou bouton)."/>
+                            </DockPanel>
+                        </Border>
+                        <ListBox x:Name="DriverList" Background="Transparent" SelectionMode="Single">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate x:DataType="local:DriverListItem">
+                                    <Panel>
+                                        <StackPanel IsVisible="{Binding IsHeader}" Orientation="Horizontal" Spacing="8" Margin="0,4" Background="Transparent"
+                                                    Cursor="Hand" ToolTip.Tip="Cliquer pour ouvrir ou fermer">
+                                            <TextBlock Text="{Binding Chevron}" FontSize="14" Width="14" Foreground="{DynamicResource Accent}" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{Binding Brand}" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource Accent}"/>
+                                            <TextBlock Text="{Binding Detail}" Classes="hint" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <DockPanel IsVisible="{Binding IsDriver}" Margin="12,0,0,0">
+                                            <Border DockPanel.Dock="Right" Classes="pill" IsVisible="{Binding Badge, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Badge}"/>
+                                            </Border>
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Title}" Foreground="{DynamicResource Ink}" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{Binding Detail}" Classes="hint" FontSize="11.5" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                            </StackPanel>
+                                        </DockPanel>
+                                    </Panel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </DockPanel>
+                </Border>
+
+                <!-- Journal -->
+                <Expander Grid.Row="3" Header="Journal" Margin="0,8,0,0" HorizontalAlignment="Stretch">
+                    <TextBox x:Name="LogBox" Height="130" IsReadOnly="True" FontFamily="Cascadia Mono, Consolas, DejaVu Sans Mono, Menlo, monospace" FontSize="12"
+                             TextWrapping="NoWrap" AcceptsReturn="True"/>
+                </Expander>
+            </Grid>
+        </DockPanel>
+
+        <!-- Fin d'installation : par défaut / page de test -->
+        <Border x:Name="FinishOverlay" Background="{DynamicResource Overlay}" IsVisible="False">
+            <Border Background="{DynamicResource Surface}" CornerRadius="14" Width="440" HorizontalAlignment="Center" VerticalAlignment="Center" ClipToBounds="True">
+                <StackPanel>
+                    <Border Height="5" Background="{StaticResource BrandGradient}"/>
+                    <StackPanel Margin="26,22,26,22">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                            <Panel Width="44" Height="44" Margin="0,0,14,0">
+                                <Ellipse Fill="{DynamicResource OkBg}"/>
+                                <PathIcon Data="{StaticResource IconCheck}" Width="20" Height="20" Foreground="{DynamicResource OkStrong}"/>
+                            </Panel>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock x:Name="FinishTitle" Classes="title" FontSize="16" TextWrapping="Wrap" MaxWidth="320"/>
+                                <TextBlock x:Name="FinishSubtitle" Classes="hint"/>
+                            </StackPanel>
+                        </StackPanel>
+                        <CheckBox x:Name="DefaultCheck" Content="Mettre comme imprimante par défaut sur ce poste" IsChecked="True"/>
+                        <StackPanel x:Name="DefaultPanel" IsVisible="False" Margin="0,0,0,8">
+                            <TextBlock Text="Imprimante par défaut sur ce poste" Classes="label" Margin="0,0,0,4"/>
+                            <ComboBox x:Name="DefaultCombo" HorizontalAlignment="Stretch"/>
+                        </StackPanel>
+                        <CheckBox x:Name="TestPageCheck" Content="Imprimer une page de test" IsChecked="True"/>
+                        <Button x:Name="FinishButton" Content="Terminer" Classes="primary" HorizontalAlignment="Right" Padding="26,9" Margin="0,18,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Border>
+
+        <!-- Glisser-déposer un pilote -->
+        <Border x:Name="DropOverlay" Background="{DynamicResource Overlay}" IsVisible="False" IsHitTestVisible="False">
+            <Border BorderBrush="{StaticResource BrandGradient}" BorderThickness="2" CornerRadius="16" Margin="40" Padding="30">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="Dépose ton pilote ici" Foreground="White" FontSize="26" FontWeight="Bold" HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="DropHint" Foreground="#C9CDE0" FontSize="14" HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                </StackPanel>
+            </Border>
+        </Border>
+    </Panel>
+</Window>
