@@ -77,7 +77,7 @@ dotnet run --project tests/EFP.Tests   # tests only
 
 The GitHub Actions workflow (`.github/workflows/build.yml`) builds all 4 versions on a Mac and signs the macOS app.
 
-**Releasing a new version**: bump `<Version>` in `src/EFP.Desktop/EFP.Desktop.csproj`, then push a `vX.Y.Z` tag. GitHub Actions builds the 4 versions and creates the Release automatically.
+**Releasing a new version**: bump `<Version>` in `src/EFP.Desktop/EFP.Desktop.csproj`, then push to `main`. GitHub Actions builds the 4 versions and creates the `vX.Y.Z` tag and Release automatically.
 
 ## Code structure
 

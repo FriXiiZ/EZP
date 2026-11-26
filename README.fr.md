@@ -105,4 +105,4 @@ packaging/        fichiers Linux et macOS ajoutés aux zips
 
 [MIT](LICENSE) : libre d'utiliser, modifier et redistribuer, en gardant la mention de licence.
 
-Pour publier une nouvelle version : changer `<Version>` dans `src/EFP.Desktop/EFP.Desktop.csproj`, puis pousser un tag `vX.Y.Z`. GitHub Actions compile les 4 versions et crée la Release toute seule.
+Pour publier une nouvelle version : changer `<Version>` dans `src/EFP.Desktop/EFP.Desktop.csproj`, puis pousser sur `main`. GitHub Actions compile les 4 versions et crée tout seul le tag `vX.Y.Z` et la Release.
