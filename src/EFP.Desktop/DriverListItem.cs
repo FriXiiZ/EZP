@@ -20,10 +20,10 @@ public sealed class DriverListItem
 
     public string Badge => Choice?.Kind switch
     {
-        DriverMatchKind.Imported => "★ importé",
+        DriverMatchKind.Imported => EFP.Core.Loc.T("★ importé", "★ imported"),
         DriverMatchKind.Driverless => "IPP / AirPrint",
-        DriverMatchKind.GenericInbox => "générique",
-        DriverMatchKind.BrandUniversal => "universel",
+        DriverMatchKind.GenericInbox => EFP.Core.Loc.T("générique", "generic"),
+        DriverMatchKind.BrandUniversal => EFP.Core.Loc.T("universel", "universal"),
         _ => "",
     };
 

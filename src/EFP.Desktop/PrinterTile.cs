@@ -5,6 +5,7 @@ using Avalonia.Platform;
 using EFP.Core;
 using EFP.Core.Discovery;
 using EFP.Core.Windows;
+using static EFP.Core.Loc;
 
 namespace EFP.Desktop;
 
@@ -16,11 +17,11 @@ public sealed class DriverOption
 
     public string Display => Choice.Kind switch
     {
-        DriverMatchKind.Imported => $"★ {Choice.DriverName} (importé)",
+        DriverMatchKind.Imported => $"★ {Choice.DriverName} " + T("(importé)", "(imported)"),
         DriverMatchKind.Driverless => $"✔ {Choice.DriverName}",
         DriverMatchKind.ExactModel => $"✔ {Choice.DriverName}",
         DriverMatchKind.BrandUniversal => $"◆ {Choice.DriverName}",
-        _ => $"⚠ {Choice.DriverName} (générique)",
+        _ => $"⚠ {Choice.DriverName} " + T("(générique)", "(generic)"),
     };
 
     public override string ToString() => Display;
@@ -108,13 +109,13 @@ public sealed class PrinterTile : INotifyPropertyChanged
 
     // ---------------- Infos ----------------
 
-    public string Brand => Printer.Brand;
+    public string Brand => Printer.Brand == Brands.Unknown ? T("Inconnue", "Unknown") : Printer.Brand;
     public string Serial => Printer.SerialNumber ?? "—";
     public string Mac => Printer.MacAddress ?? "—";
     public string SerialAndMac => $"{Serial}  ·  {Mac}";
     public string Tooltip =>
         $"MAC : {Printer.MacAddress ?? "—"} · ports : {(Printer.OpenPorts.Count == 0 ? "—" : string.Join(", ", Printer.OpenPorts))}\n" +
-        $"SNMP : {(Printer.SnmpResponded ? "oui" : "non")} · {Printer.SysDescr ?? ""}";
+        $"SNMP : {(Printer.SnmpResponded ? T("oui", "yes") : T("non", "no"))} · {Printer.SysDescr ?? ""}";
 
     public string TileTitle => string.IsNullOrWhiteSpace(Printer.Model) ? Printer.IpAddress : Printer.Model!;
     public string TileSubtitle => string.IsNullOrWhiteSpace(Printer.Model) ? Brand : $"{Brand} · {Printer.IpAddress}";
@@ -174,18 +175,18 @@ public sealed class PrinterTile : INotifyPropertyChanged
 
     public string StateText => _spinning && !string.IsNullOrEmpty(_status) ? _status : _state switch
     {
-        TileState.Working => string.IsNullOrEmpty(_status) ? "Installation…" : _status,
-        TileState.Done => "Installée",
-        TileState.Warning => "Installée (remarques)",
-        TileState.Failed => "Échec — voir le journal",
-        _ when _outdated => "Pilote à mettre à jour",
-        _ when _installed is not null => "Déjà installée ici",
-        _ => "Prête à installer",
+        TileState.Working => string.IsNullOrEmpty(_status) ? T("Installation…", "Installing…") : _status,
+        TileState.Done => T("Installée", "Installed"),
+        TileState.Warning => T("Installée (remarques)", "Installed (with notes)"),
+        TileState.Failed => T("Échec — voir le journal", "Failed — see the log"),
+        _ when _outdated => T("Pilote à mettre à jour", "Driver to update"),
+        _ when _installed is not null => T("Déjà installée ici", "Already installed here"),
+        _ => T("Prête à installer", "Ready to install"),
     };
 
     public string DriverNote =>
         OperatingSystem.IsWindows() && SelectedDriver?.Choice.Kind == DriverMatchKind.GenericInbox && Printer.Brand != Brands.Unknown && _state == TileState.Ready
-            ? $"Le pilote {Printer.Brand} sera téléchargé au moment d'installer (le générique ne sert que s'il est introuvable)."
+            ? T($"Le pilote {Printer.Brand} sera téléchargé au moment d'installer (le générique ne sert que s'il est introuvable).", $"The {Printer.Brand} driver will be downloaded at install time (the generic one is only used if it cannot be found).")
             : "";
 
     // ---------------- Déjà sur ce PC ? ----------------
@@ -203,12 +204,12 @@ public sealed class PrinterTile : INotifyPropertyChanged
             OnChanged(n);
     }
 
-    public string HereText => _installed is null ? "Pas encore installée"
-        : $"« {_installed.Name} » — {_installed.DriverName}{(_installed.DriverVersion is null ? "" : " v" + _installed.DriverVersion)}"
-          + (_outdated ? (_latestVersion is null ? "  →  à remplacer par le pilote de la marque" : $"  →  v{_latestVersion} disponible") : "");
+    public string HereText => _installed is null ? T("Pas encore installée", "Not installed yet")
+        : (En ? $"\"{_installed.Name}\"" : $"« {_installed.Name} »") + $" — {_installed.DriverName}{(_installed.DriverVersion is null ? "" : " v" + _installed.DriverVersion)}"
+          + (_outdated ? (_latestVersion is null ? T("  →  à remplacer par le pilote de la marque", "  →  replace with the brand's driver") : T($"  →  v{_latestVersion} disponible", $"  →  v{_latestVersion} available")) : "");
 
-    public string DotTooltip => _outdated ? "Pilote à mettre à jour sur ce poste" : "Déjà installée sur ce poste, pilote à jour";
-    public string InstallLabel => _outdated ? "Mettre à jour le pilote" : _installed is not null ? "Réinstaller" : "Installer";
+    public string DotTooltip => _outdated ? T("Pilote à mettre à jour sur ce poste", "Driver to update on this computer") : T("Déjà installée sur ce poste, pilote à jour", "Already installed on this computer, driver up to date");
+    public string InstallLabel => _outdated ? T("Mettre à jour le pilote", "Update driver") : _installed is not null ? T("Réinstaller", "Reinstall") : Strings.Get("Install");
 
     // ---------------- INotifyPropertyChanged ----------------
 

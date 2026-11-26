@@ -97,7 +97,7 @@ public sealed class StepResult
     /// <summary>Étape non bloquante qui mérite l'attention (réglage refusé, réseau public…).</summary>
     public bool IsWarning { get; init; }
     public string? Detail { get; init; }
-    public string Status => !Success ? "Échec" : IsWarning ? "Attention" : "OK";
+    public string Status => !Success ? Loc.T("Échec", "Failed") : IsWarning ? Loc.T("Attention", "Warning") : "OK";
 }
 
 public sealed class InstallResult

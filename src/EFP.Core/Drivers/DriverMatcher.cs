@@ -24,7 +24,7 @@ public sealed class DriverMatcher
 
         // 0. Pilotes importés à la main : prioritaires pour leur marque (et proposés pour les imprimantes de marque inconnue)
         foreach (var d in _library.Drivers.Where(d => d.IsImported && (d.Brand == printer.Brand || printer.Brand == Brands.Unknown)))
-            list.Add((new DriverChoice(d.Name, d.InfPath, DriverMatchKind.Imported, "Pilote importé à la main"),
+            list.Add((new DriverChoice(d.Name, d.InfPath, DriverMatchKind.Imported, Loc.T("Pilote importé à la main", "Manually imported driver")),
                 (d.Brand == printer.Brand ? 1500 : 200) + PdlBonus(d.Name)));
 
         // 1. Modèle exact (seulement si drivers.json le demande : par défaut, un seul pilote universel par marque)
@@ -35,7 +35,7 @@ public sealed class DriverMatcher
                 var score = ModelScore(printer.Model!, d.Name);
                 if (score > 0)
                     list.Add((new DriverChoice(d.Name, d.InfPath, DriverMatchKind.ExactModel,
-                        $"Pilote du modèle trouvé dans {Path.GetFileName(d.InfPath)}"), 1000 + score + PdlBonus(d.Name)));
+                        Loc.T($"Pilote du modèle trouvé dans {Path.GetFileName(d.InfPath)}", $"Model driver found in {Path.GetFileName(d.InfPath)}")), 1000 + score + PdlBonus(d.Name)));
             }
         }
 
@@ -50,7 +50,7 @@ public sealed class DriverMatcher
                 catch (ArgumentException) { continue; } // motif invalide dans drivers.json
                 foreach (var d in _library.Drivers.Where(d => !d.IsImported && rx.IsMatch(d.Name)))
                     list.Add((new DriverChoice(d.Name, d.InfPath, DriverMatchKind.BrandUniversal,
-                        $"Pilote universel {printer.Brand}"), 500 - i * 10 + PdlBonus(d.Name)));
+                        Loc.T($"Pilote universel {printer.Brand}", $"{printer.Brand} universal driver")), 500 - i * 10 + PdlBonus(d.Name)));
             }
         }
 
@@ -61,7 +61,7 @@ public sealed class DriverMatcher
             {
                 var score = ModelScore(printer.Model!, d.Name);
                 if (score > 0)
-                    list.Add((new DriverChoice(d.Name, d.InfPath, DriverMatchKind.ExactModel, "Pilote du modèle (Windows Update)"),
+                    list.Add((new DriverChoice(d.Name, d.InfPath, DriverMatchKind.ExactModel, Loc.T("Pilote du modèle (Windows Update)", "Model driver (Windows Update)")),
                         300 + score / 10 + PdlBonus(d.Name)));
             }
         }
@@ -69,10 +69,10 @@ public sealed class DriverMatcher
         // 3. Génériques intégrés à Windows
         for (var i = 0; i < _catalog.InboxFallback.Count; i++)
             list.Add((new DriverChoice(_catalog.InboxFallback[i], null, DriverMatchKind.GenericInbox,
-                "Pilote générique Windows (fonctions limitées : pas de finition, agrafage, codes…)"), 100 - i));
+                Loc.T("Pilote générique Windows (fonctions limitées : pas de finition, agrafage, codes…)", "Generic Windows driver (limited features: no finishing, stapling, codes…)")), 100 - i));
 
         if (list.Count == 0)
-            list.Add((new DriverChoice("Microsoft PCL6 Class Driver", null, DriverMatchKind.GenericInbox, "Pilote générique Windows"), 1));
+            list.Add((new DriverChoice("Microsoft PCL6 Class Driver", null, DriverMatchKind.GenericInbox, Loc.T("Pilote générique Windows", "Generic Windows driver")), 1));
 
         return list
             .OrderByDescending(x => x.Score)

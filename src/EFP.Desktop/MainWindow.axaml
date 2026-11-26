@@ -103,7 +103,7 @@
                 <DockPanel>
                     <TextBlock x:Name="LibraryText" DockPanel.Dock="Right" Foreground="{DynamicResource Muted}" FontSize="12"/>
                     <Ellipse Width="8" Height="8" Fill="{StaticResource BrandGradient}" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                    <TextBlock x:Name="StatusText" Text="Prêt" Foreground="{DynamicResource Ink}" FontSize="12" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock x:Name="StatusText" Text="{local:L Ready}" Foreground="{DynamicResource Ink}" FontSize="12" TextTrimming="CharacterEllipsis"/>
                 </DockPanel>
             </Border>
 
@@ -111,26 +111,30 @@
                 <!-- En-tête -->
                 <DockPanel Margin="0,0,0,14">
                     <Button x:Name="ThemeButton" DockPanel.Dock="Right" Margin="8,0,0,0" Width="40" Height="40" Padding="0" VerticalAlignment="Center"
-                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center" ToolTip.Tip="Mode clair / sombre">
+                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center" ToolTip.Tip="{local:L TipTheme}">
                         <PathIcon x:Name="ThemeIcon" Width="16" Height="16" Data="{StaticResource IconMoon}"/>
                     </Button>
+                    <Button x:Name="LanguageButton" DockPanel.Dock="Right" Margin="8,0,0,0" Width="44" Height="40" Padding="0" VerticalAlignment="Center"
+                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center" ToolTip.Tip="{local:L TipLanguage}">
+                        <TextBlock x:Name="LanguageText" FontWeight="SemiBold" FontSize="13"/>
+                    </Button>
                     <ToggleButton x:Name="DriversTabButton" DockPanel.Dock="Right" Height="40" Padding="14,0" VerticalAlignment="Center" VerticalContentAlignment="Center"
-                                  ToolTip.Tip="Tous les pilotes disponibles, triés par marque">
+                                  ToolTip.Tip="{local:L TipDriversTab}">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <PathIcon Data="{StaticResource IconList}" Width="14" Height="14"/>
-                            <TextBlock x:Name="DriversTabText" Text="Pilotes"/>
+                            <TextBlock x:Name="DriversTabText" Text="{local:L DriversTab}"/>
                         </StackPanel>
                     </ToggleButton>
                     <Image Source="/Assets/efp-logo.png" Width="44" Height="44" Margin="0,0,14,0" VerticalAlignment="Center"/>
                     <StackPanel VerticalAlignment="Center">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="EZP" FontWeight="Bold" FontSize="24" Foreground="{StaticResource BrandGradient}"/>
-                            <TextBlock Text="EazyPrinter · imprimantes en 3 clics" Classes="hint" FontSize="13" VerticalAlignment="Bottom" Margin="10,0,0,4"/>
+                            <TextBlock Text="{local:L Tagline}" Classes="hint" FontSize="13" VerticalAlignment="Bottom" Margin="10,0,0,4"/>
                         </StackPanel>
                         <TextBlock x:Name="SelectionCountText" Classes="hint" FontSize="13" Margin="0,1,0,0"
-                                   Text="Clique sur une imprimante pour l'installer, Ctrl + clic pour en choisir plusieurs."/>
+                                   Text="{local:L ClickHint}"/>
                         <TextBlock x:Name="AdminWarningText" Foreground="{DynamicResource FailStrong}" FontSize="12.5" Margin="0,4,0,0" IsVisible="False"
-                                   Text="Lancé sans droits administrateur : l'installation échouera."/>
+                                   Text="{local:L AdminWarning}"/>
                     </StackPanel>
                 </DockPanel>
 
@@ -139,19 +143,19 @@
                     <StackPanel>
                         <Grid ColumnDefinitions="*,Auto">
                             <TextBox x:Name="RangeBox" FontSize="14" VerticalContentAlignment="Center"
-                                     Watermark="192.168.1.0/24, 192.168.1.10-60 ou l'IP d'une imprimante"
-                                     ToolTip.Tip="Le réseau à scanner ou directement l'IP d'une imprimante. Entrée = lancer."/>
+                                     Watermark="{local:L RangeWatermark}"
+                                     ToolTip.Tip="{local:L TipRange}"/>
                             <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="10,0,0,0">
                                 <Button x:Name="ScanButton" Classes="primary" MinWidth="130">
                                     <StackPanel Orientation="Horizontal" Spacing="8">
                                         <PathIcon Data="{StaticResource IconSearch}" Width="14" Height="14" Foreground="White"/>
-                                        <TextBlock Text="Rechercher" Foreground="White"/>
+                                        <TextBlock Text="{local:L Search}" Foreground="White"/>
                                     </StackPanel>
                                 </Button>
-                                <Button x:Name="StopButton" Content="Arrêter" IsEnabled="False" Margin="8,0,0,0"/>
+                                <Button x:Name="StopButton" Content="{local:L Stop}" IsEnabled="False" Margin="8,0,0,0"/>
                             </StackPanel>
                         </Grid>
-                        <TextBlock Classes="hint" FontSize="12" Margin="2,6,0,0" Text="Réseau à scanner, ou l'IP d'une imprimante si elle n'apparaît pas."/>
+                        <TextBlock Classes="hint" FontSize="12" Margin="2,6,0,0" Text="{local:L RangeHint}"/>
                         <ProgressBar x:Name="ScanProgressBar" Height="3" MinHeight="3" Margin="0,8,0,0" Minimum="0" Maximum="1"/>
                     </StackPanel>
                 </Border>
@@ -212,13 +216,13 @@
                             <Border x:Name="DetailPanel" Classes="card" IsVisible="False" Margin="0,0,12,12" x:DataType="local:PrinterTile">
                                 <Grid ColumnDefinitions="*,24,Auto">
                                     <Grid ColumnDefinitions="140,*" RowDefinitions="38,38,38,32,Auto,Auto">
-                                        <TextBlock Text="Adresse IP" Classes="label"/>
+                                        <TextBlock Text="{local:L IpAddress}" Classes="label"/>
                                         <TextBox x:Name="DetailIpBox" Grid.Column="1" Classes="inline" Text="{Binding Ip, UpdateSourceTrigger=LostFocus}" IsReadOnly="True"
-                                                 ToolTip.Tip="Double-clic pour modifier, Entrée pour valider"/>
-                                        <TextBlock Grid.Row="1" Text="Nom" Classes="label"/>
+                                                 ToolTip.Tip="{local:L TipEditInline}"/>
+                                        <TextBlock Grid.Row="1" Text="{local:L Name}" Classes="label"/>
                                         <TextBox x:Name="DetailNameBox" Grid.Row="1" Grid.Column="1" Classes="inline" Text="{Binding WindowsName, UpdateSourceTrigger=LostFocus}" IsReadOnly="True"
-                                                 ToolTip.Tip="Double-clic pour modifier, Entrée pour valider"/>
-                                        <TextBlock Grid.Row="2" Text="Pilote" Classes="label"/>
+                                                 ToolTip.Tip="{local:L TipEditInline}"/>
+                                        <TextBlock Grid.Row="2" Text="{local:L Driver}" Classes="label"/>
                                         <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding Drivers}" SelectedItem="{Binding SelectedDriver}"
                                                   HorizontalAlignment="Stretch" VerticalAlignment="Center">
                                             <ComboBox.ItemTemplate>
@@ -227,10 +231,10 @@
                                                 </DataTemplate>
                                             </ComboBox.ItemTemplate>
                                         </ComboBox>
-                                        <TextBlock Grid.Row="3" Text="N° de série · MAC" Classes="label"/>
+                                        <TextBlock Grid.Row="3" Text="{local:L SerialMac}" Classes="label"/>
                                         <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SerialAndMac}" VerticalAlignment="Center" Margin="11,0,0,0"
                                                    Foreground="{DynamicResource Ink}"/>
-                                        <TextBlock Grid.Row="4" Text="Sur ce poste" Classes="label" VerticalAlignment="Top" Margin="0,8,0,0"/>
+                                        <TextBlock Grid.Row="4" Text="{local:L OnThisComputer}" Classes="label" VerticalAlignment="Top" Margin="0,8,0,0"/>
                                         <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding HereText}" TextWrapping="Wrap" Margin="11,8,0,0" Foreground="{DynamicResource Ink}"/>
                                         <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding DriverNote}" TextWrapping="Wrap" Margin="11,6,0,0"
                                                    Foreground="{DynamicResource Accent}" FontSize="12.5"/>
@@ -242,12 +246,12 @@
                                                 <TextBlock Text="{Binding InstallLabel}" Foreground="White"/>
                                             </StackPanel>
                                         </Button>
-                                        <TextBlock Text="Double-clic sur l'IP ou le nom pour les modifier." Classes="hint" FontSize="12" TextAlignment="Center" Margin="0,8,0,0"/>
+                                        <TextBlock Text="{local:L EditHint}" Classes="hint" FontSize="12" TextAlignment="Center" Margin="0,8,0,0"/>
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="6" Margin="0,8,0,0">
-                                            <Button x:Name="ImportDriverButton" Content="Importer un pilote…" Padding="10,4" FontSize="12.5"
-                                                    ToolTip.Tip="Pilote introuvable en ligne ? Choisis un fichier (ou glisse-le sur la fenêtre)."/>
-                                            <Button x:Name="ImportFolderButton" Content="Dossier…" Padding="10,4" FontSize="12.5"
-                                                    ToolTip.Tip="Importer un dossier de pilote déjà extrait."/>
+                                            <Button x:Name="ImportDriverButton" Content="{local:L ImportDriver}" Padding="10,4" FontSize="12.5"
+                                                    ToolTip.Tip="{local:L TipImportDriver}"/>
+                                            <Button x:Name="ImportFolderButton" Content="{local:L Folder}" Padding="10,4" FontSize="12.5"
+                                                    ToolTip.Tip="{local:L TipImportFolder}"/>
                                         </StackPanel>
                                     </StackPanel>
                                 </Grid>
@@ -257,11 +261,11 @@
                             <Border x:Name="MultiPanel" Classes="card" IsVisible="False" Margin="0,0,12,12">
                                 <DockPanel>
                                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Spacing="8">
-                                        <Button x:Name="MultiClearButton" Content="Désélectionner"/>
+                                        <Button x:Name="MultiClearButton" Content="{local:L Deselect}"/>
                                         <Button x:Name="MultiInstallButton" Classes="primary" Padding="18,11" FontSize="14.5">
                                             <StackPanel Orientation="Horizontal" Spacing="10">
                                                 <PathIcon Data="{StaticResource IconDownload}" Width="14" Height="14" Foreground="White"/>
-                                                <TextBlock x:Name="MultiInstallText" Text="Installer" Foreground="White"/>
+                                                <TextBlock x:Name="MultiInstallText" Text="{local:L Install}" Foreground="White"/>
                                             </StackPanel>
                                         </Button>
                                     </StackPanel>
@@ -269,7 +273,7 @@
                                         <TextBlock x:Name="MultiTitle" Classes="title"/>
                                         <TextBlock x:Name="MultiText" Classes="hint" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" Margin="0,3,0,0"/>
                                         <TextBlock Classes="hint" FontSize="12" Margin="0,3,0,0"
-                                                   Text="Pilotes téléchargés au moment d'installer, une fois par marque. Ctrl + clic pour ajouter ou retirer une imprimante."/>
+                                                   Text="{local:L MultiHint}"/>
                                     </StackPanel>
                                 </DockPanel>
                             </Border>
@@ -278,9 +282,9 @@
 
                     <StackPanel x:Name="EmptyHint" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False">
                         <Image Source="/Assets/printer.png" Width="56" Height="56" Opacity="0.35" HorizontalAlignment="Center"/>
-                        <TextBlock x:Name="EmptyHintTitle" Text="Recherche des imprimantes…" HorizontalAlignment="Center" FontWeight="SemiBold" FontSize="15"
+                        <TextBlock x:Name="EmptyHintTitle" Text="{local:L Searching}" HorizontalAlignment="Center" FontWeight="SemiBold" FontSize="15"
                                    Foreground="{DynamicResource Ink}" Margin="0,10,0,0"/>
-                        <TextBlock Text="Rien ne s'affiche ? Tape l'IP de l'imprimante dans le champ du haut." HorizontalAlignment="Center"
+                        <TextBlock Text="{local:L EmptyHint}" HorizontalAlignment="Center"
                                    TextAlignment="Center" Classes="hint" MaxWidth="460" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Panel>
@@ -292,13 +296,13 @@
                         <Border DockPanel.Dock="Top" Padding="16,14" BorderBrush="{DynamicResource CardLine}" BorderThickness="0,0,0,1">
                             <StackPanel Spacing="8">
                                 <Grid ColumnDefinitions="*,10,200">
-                                    <TextBox x:Name="DriverSearchBox" FontSize="14" Watermark="Rechercher un pilote : modèle, marque, série… (ex. L3760, M404, bizhub)"/>
+                                    <TextBox x:Name="DriverSearchBox" FontSize="14" Watermark="{local:L DriverSearchWatermark}"/>
                                     <ComboBox x:Name="BrandFilter" Grid.Column="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
                                 </Grid>
                                 <DockPanel>
                                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6">
-                                        <Button x:Name="ExpandAllButton" Content="Tout ouvrir" Padding="10,3" FontSize="12"/>
-                                        <Button x:Name="CollapseAllButton" Content="Tout fermer" Padding="10,3" FontSize="12"/>
+                                        <Button x:Name="ExpandAllButton" Content="{local:L ExpandAll}" Padding="10,3" FontSize="12"/>
+                                        <Button x:Name="CollapseAllButton" Content="{local:L CollapseAll}" Padding="10,3" FontSize="12"/>
                                     </StackPanel>
                                     <TextBlock x:Name="DriverCountText" Classes="hint" FontSize="12" VerticalAlignment="Center"/>
                                 </DockPanel>
@@ -306,9 +310,9 @@
                         </Border>
                         <Border DockPanel.Dock="Bottom" Padding="16,12" BorderBrush="{DynamicResource CardLine}" BorderThickness="0,1,0,0">
                             <DockPanel>
-                                <Button x:Name="UseDriverButton" DockPanel.Dock="Right" Classes="primary" Content="Utiliser pour l'imprimante" IsEnabled="False"/>
+                                <Button x:Name="UseDriverButton" DockPanel.Dock="Right" Classes="primary" Content="{local:L UseForPrinter}" IsEnabled="False"/>
                                 <TextBlock x:Name="UseDriverHint" Classes="hint" VerticalAlignment="Center" Margin="0,0,12,0"
-                                           Text="Choisis une imprimante dans « Imprimantes », puis un pilote ici (double-clic ou bouton)."/>
+                                           Text="{local:L UseDriverHintNone}"/>
                             </DockPanel>
                         </Border>
                         <ListBox x:Name="DriverList" Background="Transparent" SelectionMode="Single">
@@ -316,7 +320,7 @@
                                 <DataTemplate x:DataType="local:DriverListItem">
                                     <Panel>
                                         <StackPanel IsVisible="{Binding IsHeader}" Orientation="Horizontal" Spacing="8" Margin="0,4" Background="Transparent"
-                                                    Cursor="Hand" ToolTip.Tip="Cliquer pour ouvrir ou fermer">
+                                                    Cursor="Hand" ToolTip.Tip="{local:L TipToggleBrand}">
                                             <TextBlock Text="{Binding Chevron}" FontSize="14" Width="14" Foreground="{DynamicResource Accent}" VerticalAlignment="Center"/>
                                             <TextBlock Text="{Binding Brand}" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource Accent}"/>
                                             <TextBlock Text="{Binding Detail}" Classes="hint" VerticalAlignment="Center"/>
@@ -338,7 +342,7 @@
                 </Border>
 
                 <!-- Journal -->
-                <Expander Grid.Row="3" Header="Journal" Margin="0,8,0,0" HorizontalAlignment="Stretch">
+                <Expander Grid.Row="3" Header="{local:L Log}" Margin="0,8,0,0" HorizontalAlignment="Stretch">
                     <TextBox x:Name="LogBox" Height="130" IsReadOnly="True" FontFamily="Cascadia Mono, Consolas, DejaVu Sans Mono, Menlo, monospace" FontSize="12"
                              TextWrapping="NoWrap" AcceptsReturn="True"/>
                 </Expander>
@@ -361,13 +365,13 @@
                                 <TextBlock x:Name="FinishSubtitle" Classes="hint"/>
                             </StackPanel>
                         </StackPanel>
-                        <CheckBox x:Name="DefaultCheck" Content="Mettre comme imprimante par défaut sur ce poste" IsChecked="True"/>
+                        <CheckBox x:Name="DefaultCheck" Content="{local:L SetDefault}" IsChecked="True"/>
                         <StackPanel x:Name="DefaultPanel" IsVisible="False" Margin="0,0,0,8">
-                            <TextBlock Text="Imprimante par défaut sur ce poste" Classes="label" Margin="0,0,0,4"/>
+                            <TextBlock Text="{local:L DefaultOnThis}" Classes="label" Margin="0,0,0,4"/>
                             <ComboBox x:Name="DefaultCombo" HorizontalAlignment="Stretch"/>
                         </StackPanel>
-                        <CheckBox x:Name="TestPageCheck" Content="Imprimer une page de test" IsChecked="True"/>
-                        <Button x:Name="FinishButton" Content="Terminer" Classes="primary" HorizontalAlignment="Right" Padding="26,9" Margin="0,18,0,0"/>
+                        <CheckBox x:Name="TestPageCheck" Content="{local:L TestPage}" IsChecked="True"/>
+                        <Button x:Name="FinishButton" Content="{local:L Finish}" Classes="primary" HorizontalAlignment="Right" Padding="26,9" Margin="0,18,0,0"/>
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -377,7 +381,7 @@
         <Border x:Name="DropOverlay" Background="{DynamicResource Overlay}" IsVisible="False" IsHitTestVisible="False">
             <Border BorderBrush="{StaticResource BrandGradient}" BorderThickness="2" CornerRadius="16" Margin="40" Padding="30">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <TextBlock Text="Dépose ton pilote ici" Foreground="White" FontSize="26" FontWeight="Bold" HorizontalAlignment="Center"/>
+                    <TextBlock Text="{local:L DropHere}" Foreground="White" FontSize="26" FontWeight="Bold" HorizontalAlignment="Center"/>
                     <TextBlock x:Name="DropHint" Foreground="#C9CDE0" FontSize="14" HorizontalAlignment="Center" Margin="0,8,0,0"/>
                 </StackPanel>
             </Border>

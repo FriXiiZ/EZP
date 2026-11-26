@@ -6,9 +6,9 @@
 
 EZP scanne le réseau, reconnaît chaque imprimante (marque, modèle, numéro de série), choisit le bon pilote et l'installe. Un seul fichier exécutable, rien à installer à côté.
 
-![Démo d'EZP : recherche sur le réseau et détection de 5 imprimantes](docs/demo.gif)
+![Démo d'EZP : scan du réseau, installation d'une imprimante et onglet Pilotes](docs/demo.gif)
 
-<sub>Démo enregistrée avec des imprimantes simulées.</sub>
+<sub>Scan → installation → onglet Pilotes, en 30 secondes ([version MP4](docs/demo.mp4)). Enregistrée sous Linux avec des imprimantes simulées, interface en anglais (bouton FR pour passer en français).</sub>
 
 ## Téléchargement
 
@@ -35,6 +35,7 @@ Les versions prêtes à l'emploi sont dans les [**Releases**](../../releases/lat
 - **Import manuel** : glisser-déposer d'un pilote (.zip, .exe, .inf, .msi, .ppd ou dossier) quand aucun pilote automatique n'est trouvé.
 - **IP à la main** : pour une imprimante que le scan ne voit pas.
 - **Installation complète** : port, pilote, recto-verso et noir et blanc par défaut, imprimante par défaut, page de test. Les doublons ajoutés tout seuls par Windows sur la même IP sont remplacés.
+- **Interface en français et en anglais** : suit la langue du système, bouton FR / EN pour changer à tout moment.
 - **Mode clair et mode sombre.**
 
 ### Comment EZP installe selon le système
@@ -62,7 +63,7 @@ EZP garde ses pilotes et réglages dans le dossier de données de l'utilisateur 
 **Mode clé USB** : s'il y a un dossier `Drivers` à côté de l'exécutable, tout reste sur la clé.
 
 Fichiers utiles :
-- `ezp-settings.json` : thème, scan au démarrage, nom des imprimantes, recto-verso par défaut…
+- `ezp-settings.json` : langue, thème, scan au démarrage, nom des imprimantes, recto-verso par défaut…
 - `drivers.json` : pilotes préférés par marque (expressions régulières, du plus préféré au moins préféré). Il est recréé automatiquement s'il est supprimé.
 
 ## Compiler

@@ -6,9 +6,9 @@
 
 EZP scans the network, identifies each printer (brand, model, serial number), picks the right driver and installs it. One single executable, nothing else to install.
 
-![EZP demo: network scan finding 5 printers](docs/demo.gif)
+![EZP demo: network scan, printer installation and Drivers tab](docs/demo.gif)
 
-<sub>Demo recorded with simulated printers. The interface is currently in French; an English version is planned.</sub>
+<sub>Scan → install → Drivers tab, in 30 seconds ([MP4 version](docs/demo.mp4)). Recorded on Linux with simulated printers.</sub>
 
 ## Download
 
@@ -35,6 +35,7 @@ Ready-to-use builds are in the [**Releases**](../../releases/latest):
 - **Manual import**: drag and drop a driver (.zip, .exe, .inf, .msi, .ppd or a folder) when no driver is found automatically.
 - **Manual IP**: for a printer the scan doesn't see.
 - **Full setup**: port, driver, duplex and black & white by default, default printer, test page. Duplicates that Windows added on its own for the same IP are replaced.
+- **English and French interface**: follows the system language, switch anytime with the EN / FR button.
 - **Light and dark mode.**
 
 ### How EZP installs on each system
@@ -62,7 +63,7 @@ EZP stores its drivers and settings in the user's data folder:
 **USB stick mode**: if there is a `Drivers` folder next to the executable, everything stays on the stick.
 
 Useful files:
-- `ezp-settings.json`: theme, scan at startup, printer naming, default duplex…
+- `ezp-settings.json`: language, theme, scan at startup, printer naming, default duplex…
 - `drivers.json`: preferred drivers per brand (regular expressions, from most to least preferred). Recreated automatically if deleted.
 
 ## Build

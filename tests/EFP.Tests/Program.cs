@@ -564,6 +564,30 @@ if (pwsh is not null)
 }
 else Console.WriteLine("(pwsh absent : tests PowerShell ignorés)");
 
+// ---------------------------------------------------------------- Langue
+TestSync("Langue : scripts générés en anglais, sans accolade restante", () =>
+{
+    var p = new DiscoveredPrinter { IpAddress = "192.168.1.50", Brand = "HP", Model = "LaserJet Pro M404dn" };
+    var d = new DriverChoice("HP Universal Printing PS", null, DriverMatchKind.BrandUniversal, "");
+    try
+    {
+        Loc.En = true;
+        var ps = PowerShellScripts.InstallPrinter(p, d, new InstallOptions(), "HP LaserJet");
+        Contains(ps, "'already present'", "PowerShell en anglais");
+        Contains(ps, "for user $env:USERNAME", "utilisateur en anglais");
+        Equal(false, ps.Contains("{{") || ps.Contains("Loc.T"), "aucune interpolation restante (PowerShell)");
+        var sh = EFP.Core.Platform.CupsScripts.InstallPrinter(p, d, new InstallOptions(), "HP_LaserJet", "HP LaserJet");
+        Contains(sh, "duplex by default, not shared", "sh en anglais");
+        Equal(false, sh.Contains("{{") || sh.Contains("Loc.T"), "aucune interpolation restante (sh)");
+        Equal("Driver", Loc.Step("Pilote"), "nom d'étape traduit");
+        var dump = Environment.GetEnvironmentVariable("EZP_DUMP_SCRIPTS");
+        if (!string.IsNullOrEmpty(dump)) { File.WriteAllText(Path.Combine(dump, "install-en.ps1"), ps); File.WriteAllText(Path.Combine(dump, "finish-en.ps1"), PowerShellScripts.FinishPrinter("HP", true, true)); }
+    }
+    finally { Loc.En = false; }
+    var fr = PowerShellScripts.InstallPrinter(p, d, new InstallOptions(), "HP LaserJet");
+    Contains(fr, "'déjà présent'", "PowerShell en français par défaut");
+});
+
 UpdateTests.Register(Test, TestSync);
 
 // ---------------------------------------------------------------- Exécution

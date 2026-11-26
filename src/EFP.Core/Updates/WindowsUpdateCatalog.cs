@@ -94,11 +94,11 @@ public sealed class WindowsUpdateCatalog
         var query = $"{brand} {model}".Trim();
         var entries = await SearchAsync(query, ct).ConfigureAwait(false);
         var best = PickBest(entries);
-        if (best is null) { log?.Invoke($"Windows Update : aucun pilote d'imprimante pour « {query} »."); return null; }
-        log?.Invoke($"Windows Update : « {best.Title} » ({best.Products.Split(',')[0]}, {best.LastUpdated:dd.MM.yyyy}, {best.Size / 1048576.0:F1} Mo)");
+        if (best is null) { log?.Invoke(Loc.T($"Windows Update : aucun pilote d'imprimante pour « {query} ».", $"Windows Update: no printer driver for \"{query}\".")); return null; }
+        log?.Invoke(Loc.T($"Windows Update : « {best.Title} » ({best.Products.Split(',')[0]}, {best.LastUpdated:dd.MM.yyyy}, {best.Size / 1048576.0:F1} Mo)", $"Windows Update: \"{best.Title}\" ({best.Products.Split(',')[0]}, {best.LastUpdated:dd.MM.yyyy}, {best.Size / 1048576.0:F1} MB)"));
 
         var url = (await GetDownloadUrlsAsync(best.Id, ct).ConfigureAwait(false)).FirstOrDefault();
-        if (url is null) { log?.Invoke("Windows Update : lien de téléchargement introuvable."); return null; }
+        if (url is null) { log?.Invoke(Loc.T("Windows Update : lien de téléchargement introuvable.", "Windows Update: download link not found.")); return null; }
 
         var safeModel = Regex.Replace(model, @"[^A-Za-z0-9._-]+", "_").Trim('_');
         var dest = Path.Combine(driversRoot, brand, FolderPrefix + safeModel);
@@ -127,7 +127,7 @@ public sealed class WindowsUpdateCatalog
         {
             string actual;
             await using (var fs = File.OpenRead(cab)) actual = Convert.ToHexString(await SHA1.HashDataAsync(fs, ct).ConfigureAwait(false)).ToLowerInvariant();
-            if (actual != expected) { File.Delete(cab); throw new InvalidDataException("Empreinte du paquet Windows Update incorrecte : téléchargement annulé."); }
+            if (actual != expected) { File.Delete(cab); throw new InvalidDataException(Loc.T("Empreinte du paquet Windows Update incorrecte : téléchargement annulé.", "Wrong Windows Update package hash: download cancelled.")); }
         }
 
         progress?.Report(new DownloadProgress("Windows Update", 0, null, "Extraction"));
@@ -137,10 +137,10 @@ public sealed class WindowsUpdateCatalog
         try { File.Delete(cab); } catch (IOException) { }
         if (!ok || !Directory.EnumerateFiles(dest, "*.inf", Infs.All).Any())
         {
-            log?.Invoke("Windows Update : paquet téléchargé mais impossible à extraire.");
+            log?.Invoke(Loc.T("Windows Update : paquet téléchargé mais impossible à extraire.", "Windows Update: package downloaded but could not be extracted."));
             return null;
         }
-        log?.Invoke($"Windows Update : pilote rangé dans {Path.GetRelativePath(driversRoot, dest)}");
+        log?.Invoke(Loc.T("Windows Update : pilote rangé dans ", "Windows Update: driver saved to ") + Path.GetRelativePath(driversRoot, dest));
         return dest;
     }
 

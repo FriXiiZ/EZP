@@ -29,7 +29,7 @@ public static class IpRange
             {
                 if (seen.Add(ToUInt(ip))) result.Add(ip);
                 if (result.Count > MaxHosts)
-                    throw new FormatException($"Plage trop grande (plus de {MaxHosts} adresses).");
+                    throw new FormatException(Loc.T($"Plage trop grande (plus de {MaxHosts} adresses).", $"Range too large (more than {MaxHosts} addresses)."));
             }
         }
         return result;
@@ -41,14 +41,14 @@ public static class IpRange
         {
             var parts = token.Split('/');
             if (parts.Length != 2 || !TryParseV4(parts[0], out var ip) || !int.TryParse(parts[1], out var prefix) || prefix is < 8 or > 32)
-                throw new FormatException($"Plage CIDR invalide : {token}");
+                throw new FormatException(Loc.T($"Plage CIDR invalide : {token}", $"Invalid CIDR range: {token}"));
             return Hosts(ip, prefix);
         }
         if (token.Contains('-'))
         {
             var parts = token.Split('-');
             if (parts.Length != 2 || !TryParseV4(parts[0], out var start))
-                throw new FormatException($"Plage invalide : {token}");
+                throw new FormatException(Loc.T($"Plage invalide : {token}", $"Invalid range: {token}"));
             IPAddress end;
             if (byte.TryParse(parts[1], out var lastOctet))
             {
@@ -57,15 +57,15 @@ public static class IpRange
                 end = new IPAddress(b);
             }
             else if (!TryParseV4(parts[1], out end!))
-                throw new FormatException($"Plage invalide : {token}");
+                throw new FormatException(Loc.T($"Plage invalide : {token}", $"Invalid range: {token}"));
             var s = ToUInt(start);
             var e = ToUInt(end);
             if (e < s) (s, e) = (e, s);
-            if (e - s + 1 > MaxHosts) throw new FormatException($"Plage trop grande : {token}");
+            if (e - s + 1 > MaxHosts) throw new FormatException(Loc.T($"Plage trop grande : {token}", $"Range too large: {token}"));
             return Enumerable.Range(0, (int)(e - s + 1)).Select(i => FromUInt(s + (uint)i));
         }
         if (TryParseV4(token, out var single)) return new[] { single };
-        throw new FormatException($"Adresse invalide : {token}");
+        throw new FormatException(Loc.T($"Adresse invalide : {token}", $"Invalid address: {token}"));
     }
 
     /// <summary>Adresses hôtes d'un réseau (sans adresse réseau ni broadcast pour les préfixes &lt; 31).</summary>
@@ -74,7 +74,7 @@ public static class IpRange
         var mask = prefix == 0 ? 0u : uint.MaxValue << (32 - prefix);
         var net = ToUInt(anyAddressInNetwork) & mask;
         var count = prefix >= 32 ? 1UL : 1UL << (32 - prefix);
-        if (count > MaxHosts) throw new FormatException($"Réseau /{prefix} trop grand ({count} adresses).");
+        if (count > MaxHosts) throw new FormatException(Loc.T($"Réseau /{prefix} trop grand ({count} adresses).", $"Network /{prefix} too large ({count} addresses)."));
         if (prefix >= 31)
         {
             for (ulong i = 0; i < count; i++) yield return FromUInt(net + (uint)i);

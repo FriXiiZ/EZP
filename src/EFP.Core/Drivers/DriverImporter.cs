@@ -45,14 +45,14 @@ public sealed class DriverImporter
                 else if (!await _extractor.ExtractToAsync(path, staging, ct).ConfigureAwait(false))
                 {
                     result.Message = Path.GetExtension(path).ToLowerInvariant() is ".exe" or ".7z" or ".cab"
-                        ? "Impossible d'ouvrir cette archive : ajoute 7za.exe dans le dossier Tools, ou décompresse-la puis importe le dossier."
-                        : "Format non pris en charge : importe un .zip, un .inf, un dossier, ou un .exe avec 7za.exe dans Tools.";
+                        ? Loc.T("Impossible d'ouvrir cette archive : ajoute 7za.exe dans le dossier Tools, ou décompresse-la puis importe le dossier.", "Cannot open this archive: add 7za.exe to the Tools folder, or extract it and import the folder.")
+                        : Loc.T("Format non pris en charge : importe un .zip, un .inf, un dossier, ou un .exe avec 7za.exe dans Tools.", "Unsupported format: import a .zip, an .inf, a folder, or an .exe with 7za.exe in Tools.");
                     return result;
                 }
             }
             else
             {
-                result.Message = "Fichier introuvable.";
+                result.Message = Loc.T("Fichier introuvable.", "File not found.");
                 return result;
             }
 
@@ -64,7 +64,7 @@ public sealed class DriverImporter
             }
             if (lib.Drivers.Count == 0)
             {
-                result.Message = "Aucun pilote d'imprimante 64 bits (.inf) dans ce que tu as importé.";
+                result.Message = Loc.T("Aucun pilote d'imprimante 64 bits (.inf) dans ce que tu as importé.", "No 64-bit printer driver (.inf) in what you imported.");
                 return result;
             }
 
@@ -79,7 +79,7 @@ public sealed class DriverImporter
             result.Folder = target;
             result.DriverNames.AddRange(lib.Drivers.Select(d => d.Name).Distinct()
                 .OrderByDescending(DriverMatcher.IsPostScript).ThenBy(n => n.Length));
-            result.Message = $"{result.DriverNames.Count} pilote(s) {brand} importé(s) : {string.Join(", ", result.DriverNames.Take(3))}{(result.DriverNames.Count > 3 ? "…" : "")}";
+            result.Message = Loc.T($"{result.DriverNames.Count} pilote(s) {brand} importé(s) : ", $"{result.DriverNames.Count} {brand} driver(s) imported: ") + $"{string.Join(", ", result.DriverNames.Take(3))}{(result.DriverNames.Count > 3 ? "…" : "")}";
             return result;
         }
         finally

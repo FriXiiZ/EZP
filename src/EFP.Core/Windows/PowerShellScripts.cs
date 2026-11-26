@@ -54,7 +54,7 @@ public static class PowerShellScripts
     public static string BuildPrinterName(DiscoveredPrinter p, InstallOptions o)
     {
         var name = o.NameTemplate
-            .Replace("{Brand}", p.Brand == Brands.Unknown ? "Imprimante" : p.Brand, StringComparison.OrdinalIgnoreCase)
+            .Replace("{Brand}", p.Brand == Brands.Unknown ? Loc.T("Imprimante", "Printer") : p.Brand, StringComparison.OrdinalIgnoreCase)
             .Replace("{Model}", p.Model ?? "", StringComparison.OrdinalIgnoreCase)
             .Replace("{Ip}", p.IpAddress, StringComparison.OrdinalIgnoreCase)
             .Replace("{Location}", o.Location ?? "", StringComparison.OrdinalIgnoreCase);
@@ -63,7 +63,7 @@ public static class PowerShellScripts
             name = Regex.Replace(name, $@"\b{Regex.Escape(p.Brand)}\s+{Regex.Escape(p.Brand)}\b", p.Brand, RegexOptions.IgnoreCase);
         name = Regex.Replace(name, @"[\\,""\x00-\x1F]", " ");          // caractères refusés par le spouleur
         name = Regex.Replace(name, @"\s+", " ").Trim(' ', '-', '_');
-        if (name.Length == 0) name = $"Imprimante {p.IpAddress}";
+        if (name.Length == 0) name = Loc.T("Imprimante", "Printer") + $" {p.IpAddress}";
         return name.Length > 120 ? name[..120].Trim() : name;
     }
 
@@ -105,27 +105,27 @@ public static class PowerShellScripts
         sb.AppendLine($"$noAutoSetup = {Bool(o.DisableWindowsAutoSetup)}");
         sb.AppendLine($"$share   = {Bool(o.ShareOnNetwork)}");
         sb.AppendLine($"$shareName = {Quote(BuildShareName(string.IsNullOrWhiteSpace(o.ShareName) ? printerName : o.ShareName))}");
-        sb.Append("""
+        sb.Append($$"""
 
             $ok = Step 'Pilote' {
-                if (Get-PrinterDriver -Name $driver -ErrorAction SilentlyContinue) { 'déjà présent'; return }
+                if (Get-PrinterDriver -Name $driver -ErrorAction SilentlyContinue) { '{{Loc.T("déjà présent", "already present")}}'; return }
                 if ($inf) {
-                    if (-not (Test-Path -LiteralPath $inf)) { throw "INF introuvable : $inf" }
+                    if (-not (Test-Path -LiteralPath $inf)) { throw "{{Loc.T("INF introuvable : ", "INF not found: ")}}$inf" }
                     # Ajout au magasin de pilotes seulement (sans /install : évite un balayage des périphériques qui peut durer des minutes)
                     $pnp = & pnputil.exe /add-driver $inf 2>&1
                     # 0 = OK, 259 = déjà dans le magasin, 3010 = redémarrage conseillé
-                    if ($LASTEXITCODE -notin 0, 259, 3010) { throw ("pnputil a échoué (code {0}) : {1}" -f $LASTEXITCODE, ((@($pnp) | Select-Object -Last 3) -join ' ')) }
+                    if ($LASTEXITCODE -notin 0, 259, 3010) { throw ("{{Loc.T("pnputil a échoué (code {0}) : {1}", "pnputil failed (code {0}): {1}")}}" -f $LASTEXITCODE, ((@($pnp) | Select-Object -Last 3) -join ' ')) }
                 }
                 Add-PrinterDriver -Name $driver
-                'installé'
+                '{{Loc.T("installé", "installed")}}'
             }
             if (-not $ok) { exit 1 }
 
             $ok = Step 'Port' {
-                if (Get-PrinterPort -Name $port -ErrorAction SilentlyContinue) { 'déjà présent'; return }
+                if (Get-PrinterPort -Name $port -ErrorAction SilentlyContinue) { '{{Loc.T("déjà présent", "already present")}}'; return }
                 if ($snmp) { Add-PrinterPort -Name $port -PrinterHostAddress $ip -SNMP 1 -SNMPCommunity 'public' }
                 else { Add-PrinterPort -Name $port -PrinterHostAddress $ip }
-                "créé ($ip)"
+                "{{Loc.T("créé", "created")}} ($ip)"
             }
             if (-not $ok) { exit 1 }
 
@@ -161,9 +161,9 @@ public static class PowerShellScripts
                 Add-Printer @params
                 $state.Name = $n
                 [Console]::Out.WriteLine('##PP|@name|OK|' + $n)
-                if ($removed.Count -gt 0) { 'ajoutée, remplace : ' + ($removed -join ', ') }
-                elseif ($dups.Count -gt 0) { 'WARN:ajoutée, mais déjà installée sous : ' + ($dups -join ', ') }
-                else { 'ajoutée' }
+                if ($removed.Count -gt 0) { '{{Loc.T("ajoutée, remplace : ", "added, replaces: ")}}' + ($removed -join ', ') }
+                elseif ($dups.Count -gt 0) { 'WARN:{{Loc.T("ajoutée, mais déjà installée sous : ", "added, but already installed as: ")}}' + ($dups -join ', ') }
+                else { '{{Loc.T("ajoutée", "added")}}' }
             }
             if (-not $ok) { exit 1 }
 
@@ -172,8 +172,8 @@ public static class PowerShellScripts
                     $cfg = @{ PrinterName = $state.Name }
                     if ($duplex) { $cfg.DuplexingMode = 'TwoSidedLongEdge' }
                     if ($mono) { $cfg.Color = $false }
-                    try { Set-PrintConfiguration @cfg; (@(if ($duplex) { 'recto-verso' }; if ($mono) { 'noir et blanc' }) -join ', ') }
-                    catch { 'WARN:réglages refusés par le pilote (' + $_.Exception.Message + ')' }
+                    try { Set-PrintConfiguration @cfg; (@(if ($duplex) { '{{Loc.T("recto-verso", "duplex")}}' }; if ($mono) { '{{Loc.T("noir et blanc", "black and white")}}' }) -join ', ') }
+                    catch { 'WARN:{{Loc.T("réglages refusés par le pilote (", "settings refused by the driver (")}}' + $_.Exception.Message + ')' }
                 } | Out-Null
             }
 
@@ -185,10 +185,10 @@ public static class PowerShellScripts
                     if ($p -and "$($p.PrinterStatus)" -match 'Offline' -and $snmp) {
                         $escapedPort = $port.Replace('\', '\\').Replace("'", "\'")
                         Get-CimInstance -ClassName Win32_TCPIPPrinterPort -Filter ("Name='{0}'" -f $escapedPort) | Set-CimInstance -Property @{ SNMPEnabled = $false }
-                        'WARN:Windows indiquait « Hors connexion » : état SNMP du port désactivé (fréquent sur HP OfficeJet)'
+                        'WARN:{{Loc.T("Windows indiquait « Hors connexion » : état SNMP du port désactivé (fréquent sur HP OfficeJet)", "Windows reported Offline: SNMP status disabled on the port (common on HP OfficeJet)")}}'
                     } elseif ($p -and "$($p.PrinterStatus)" -match 'Offline') {
-                        'WARN:imprimante hors connexion (éteinte ou IP incorrecte ?)'
-                    } else { 'en ligne' }
+                        'WARN:{{Loc.T("imprimante hors connexion (éteinte ou IP incorrecte ?)", "printer offline (turned off or wrong IP?)")}}'
+                    } else { '{{Loc.T("en ligne", "online")}}' }
                 } catch { 'WARN:' + $_.Exception.Message }
             } | Out-Null
 
@@ -200,7 +200,7 @@ public static class PowerShellScripts
                     if ($rules.Count -gt 0) { $rules | Enable-NetFirewallRule }
                     $unc = "\\$env:COMPUTERNAME\$shareName"
                     [Console]::Out.WriteLine('##PP|@share|OK|' + $unc)
-                    "partagée : $unc"
+                    "{{Loc.T("partagée : ", "shared: ")}}$unc"
                 } | Out-Null
             }
 
@@ -212,7 +212,7 @@ public static class PowerShellScripts
                             if (-not (Test-Path $k)) { New-Item -Path $k -Force | Out-Null }
                             New-ItemProperty -Path $k -Name 'AutoSetup' -Value 0 -PropertyType DWord -Force | Out-Null
                         }
-                        'désactivé (Windows n''ajoutera plus ses propres copies)'
+                        '{{Loc.T("désactivé (Windows n''ajoutera plus ses propres copies)", "disabled (Windows will no longer add its own copies)")}}'
                     } catch { 'WARN:' + $_.Exception.Message }
                 } | Out-Null
             }
@@ -229,7 +229,7 @@ public static class PowerShellScripts
                         Set-ItemProperty -Path $key -Name 'LegacyDefaultPrinterMode' -Value 1 -Type DWord
                         $wp = Get-WmiPrinter $state.Name
                         $r = Invoke-CimMethod -InputObject $wp -MethodName SetDefaultPrinter
-                        if ($r.ReturnValue -ne 0) { "WARN:code $($r.ReturnValue)" } else { "pour l'utilisateur $env:USERNAME" }
+                        if ($r.ReturnValue -ne 0) { "WARN:code $($r.ReturnValue)" } else { "{{Loc.T("pour l'utilisateur", "for user")}} $env:USERNAME" }
                     } catch { 'WARN:' + $_.Exception.Message }
                 } | Out-Null
             }
@@ -239,7 +239,7 @@ public static class PowerShellScripts
                     try {
                         $wp = Get-WmiPrinter $state.Name
                         $r = Invoke-CimMethod -InputObject $wp -MethodName PrintTestPage
-                        if ($r.ReturnValue -ne 0) { "WARN:code $($r.ReturnValue)" } else { 'envoyée' }
+                        if ($r.ReturnValue -ne 0) { "WARN:code $($r.ReturnValue)" } else { '{{Loc.T("envoyée", "sent")}}' }
                     } catch { 'WARN:' + $_.Exception.Message }
                 } | Out-Null
             }
@@ -256,7 +256,7 @@ public static class PowerShellScripts
         sb.AppendLine($"$state   = @{{ Name = {Quote(printerName)} }}");
         sb.AppendLine($"$setDefault = {Bool(setDefault)}");
         sb.AppendLine($"$testPage   = {Bool(testPage)}");
-        sb.Append("""
+        sb.Append($$"""
             function Get-WmiPrinter([string]$n) {
                 $escaped = $n.Replace('\', '\\').Replace("'", "\'")
                 Get-CimInstance -ClassName Win32_Printer -Filter ("Name='{0}'" -f $escaped)
@@ -268,7 +268,7 @@ public static class PowerShellScripts
                         Set-ItemProperty -Path $key -Name 'LegacyDefaultPrinterMode' -Value 1 -Type DWord
                         $wp = Get-WmiPrinter $state.Name
                         $r = Invoke-CimMethod -InputObject $wp -MethodName SetDefaultPrinter
-                        if ($r.ReturnValue -ne 0) { "WARN:code $($r.ReturnValue)" } else { "pour l'utilisateur $env:USERNAME" }
+                        if ($r.ReturnValue -ne 0) { "WARN:code $($r.ReturnValue)" } else { "{{Loc.T("pour l'utilisateur", "for user")}} $env:USERNAME" }
                     } catch { 'WARN:' + $_.Exception.Message }
                 } | Out-Null
             }
@@ -277,7 +277,7 @@ public static class PowerShellScripts
                     try {
                         $wp = Get-WmiPrinter $state.Name
                         $r = Invoke-CimMethod -InputObject $wp -MethodName PrintTestPage
-                        if ($r.ReturnValue -ne 0) { "WARN:code $($r.ReturnValue)" } else { 'envoyée' }
+                        if ($r.ReturnValue -ne 0) { "WARN:code $($r.ReturnValue)" } else { '{{Loc.T("envoyée", "sent")}}' }
                     } catch { 'WARN:' + $_.Exception.Message }
                 } | Out-Null
             }

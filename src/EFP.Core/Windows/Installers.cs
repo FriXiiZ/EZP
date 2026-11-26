@@ -79,16 +79,16 @@ public sealed class PrinterInstaller
             });
         }
         if (output.TimedOut)
-            steps.Add(new StepResult { Step = "Délai", Success = false, Detail = "le script n'a pas répondu à temps" });
+            steps.Add(new StepResult { Step = "Délai", Success = false, Detail = Loc.T("le script n'a pas répondu à temps", "the script did not respond in time") });
         else if (steps.Count == 0)
             steps.Add(new StepResult
             {
                 Step = "PowerShell",
                 Success = false,
-                Detail = FirstLine(output.StdErr) ?? $"aucun résultat (code {output.ExitCode})",
+                Detail = FirstLine(output.StdErr) ?? Loc.T($"aucun résultat (code {output.ExitCode})", $"no result (code {output.ExitCode})"),
             });
         else if (output.ExitCode != 0 && steps.All(s => s.Success))
-            steps.Add(new StepResult { Step = "PowerShell", Success = false, Detail = FirstLine(output.StdErr) ?? $"code de sortie {output.ExitCode}" });
+            steps.Add(new StepResult { Step = "PowerShell", Success = false, Detail = FirstLine(output.StdErr) ?? Loc.T($"code de sortie {output.ExitCode}", $"exit code {output.ExitCode}") });
     }
 
     private static string? FirstLine(string s) =>

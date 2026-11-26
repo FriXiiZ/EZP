@@ -10,7 +10,7 @@
     <RootNamespace>EFP.Desktop</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\efp.ico</ApplicationIcon>
-    <Version>2.1.2</Version>
+    <Version>2.2.0</Version>
     <Product>EZP — EazyPrinter</Product>
     <Description>Installation d'imprimantes réseau multimarques</Description>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>

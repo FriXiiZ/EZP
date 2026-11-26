@@ -15,6 +15,7 @@ using EFP.Core.Drivers;
 using EFP.Core.Platform;
 using EFP.Core.Updates;
 using EFP.Core.Windows;
+using static EFP.Core.Loc;
 
 namespace EFP.Desktop;
 
@@ -96,8 +97,8 @@ public partial class MainWindow : Window
             if (paths is { Count: > 0 }) await ImportDriversAsync(paths);
         });
         DropHint.Text = _platform.UsesWindowsDrivers
-            ? ".zip · .exe · .inf · .cab · dossier — il devient prioritaire pour sa marque"
-            : "fichier .ppd du constructeur — il devient prioritaire pour sa marque";
+            ? T(".zip · .exe · .inf · .cab · dossier — il devient prioritaire pour sa marque", ".zip · .exe · .inf · .cab · folder — it becomes the preferred driver for its brand")
+            : T("fichier .ppd du constructeur — il devient prioritaire pour sa marque", "manufacturer's .ppd file — it becomes the preferred driver for its brand");
 
         DriversTabButton.IsCheckedChanged += (_, _) => ShowDriversPage(DriversTabButton.IsChecked == true);
         DriverSearchBox.TextChanged += (_, _) => { _searchCollapsed.Clear(); ScheduleDriverFilter(); };
@@ -135,6 +136,8 @@ public partial class MainWindow : Window
 
         Title = $"EZP — EazyPrinter — v{typeof(MainWindow).Assembly.GetName().Version?.ToString(3)} · {_platform.Name}";
         UpdateThemeIcon();
+        LanguageText.Text = En ? "FR" : "EN";
+        LanguageButton.Click += (_, _) => SwitchLanguage();
         AdminWarningText.IsVisible = !Program.CanInstall;
         Opened += async (_, _) => await OnOpenedAsync();
     }
@@ -147,18 +150,18 @@ public partial class MainWindow : Window
         {
             var subnets = IpRange.GetLocalSubnets();
             if (subnets.Count > 0) RangeBox.Text = subnets[0].Cidr;
-            else Log("Aucune carte réseau IPv4 active trouvée : tape un réseau (ex. 192.168.1.0/24) ou l'IP d'une imprimante.");
+            else Log(T("Aucune carte réseau IPv4 active trouvée : tape un réseau (ex. 192.168.1.0/24) ou l'IP d'une imprimante.", "No active IPv4 network adapter found: type a network (e.g. 192.168.1.0/24) or a printer's IP."));
         }
-        catch (Exception ex) { Log($"Cartes réseau illisibles ({ex.Message}) : tape le réseau à la main."); }
+        catch (Exception ex) { Log(T($"Cartes réseau illisibles ({ex.Message}) : tape le réseau à la main.", $"Cannot read network adapters ({ex.Message}): type the network manually.")); }
 
         try { await LoadDriversAsync(); }
-        catch (Exception ex) { Log($"Lecture des pilotes impossible : {ex.Message}"); }
+        catch (Exception ex) { Log(T("Lecture des pilotes impossible : ", "Cannot read drivers: ") + ex.Message); }
 
         if (!_platform.UsesWindowsDrivers && !File.Exists("/usr/sbin/lpadmin") && !File.Exists("/usr/bin/lpadmin"))
-            Log("⚠ CUPS n'est pas installé : installe le paquet « cups » pour pouvoir ajouter des imprimantes.");
+            Log(T("⚠ CUPS n'est pas installé : installe le paquet « cups » pour pouvoir ajouter des imprimantes.", "⚠ CUPS is not installed: install the \"cups\" package to add printers."));
 
         if (_settings.ScanAtStartup && !string.IsNullOrWhiteSpace(RangeBox.Text)) StartSearch();
-        else EmptyHintTitle.Text = "Lance une recherche avec le bouton « Rechercher »";
+        else EmptyHintTitle.Text = T("Lance une recherche avec le bouton « Rechercher »", "Start a search with the \"Search\" button");
     }
 
     private void ToggleTheme()
@@ -193,14 +196,14 @@ public partial class MainWindow : Window
         List<IPAddress> addresses;
         try { addresses = IpRange.Parse(range); }
         catch (FormatException ex) { Warn(ex.Message); return; }
-        if (addresses.Count == 0) { Warn("Plage vide."); return; }
+        if (addresses.Count == 0) { Warn(T("Plage vide.", "Empty range.")); return; }
 
         _scanCts = new CancellationTokenSource();
         SetScanning(true);
         ScanProgressBar.Value = 0;
-        EmptyHintTitle.Text = "Recherche des imprimantes…";
+        EmptyHintTitle.Text = Strings.Get("Searching");
         var started = DateTime.Now;
-        Log($"Scan de {addresses.Count} adresses ({range})…");
+        Log(T($"Scan de {addresses.Count} adresses ({range})…", $"Scanning {addresses.Count} addresses ({range})…"));
 
         var known = new HashSet<string>(_rows.Select(r => r.Ip));
         var maxDone = 0;
@@ -209,7 +212,7 @@ public partial class MainWindow : Window
             if (p.Done < maxDone) return;
             maxDone = p.Done;
             ScanProgressBar.Value = (double)p.Done / p.Total;
-            StatusText.Text = $"Recherche : {p.Done}/{p.Total} · {p.Found} imprimante(s)";
+            StatusText.Text = T($"Recherche : {p.Done}/{p.Total} · {p.Found} imprimante(s)", $"Searching: {p.Done}/{p.Total} · {p.Found} printer(s)");
         });
 
         try
@@ -218,15 +221,15 @@ public partial class MainWindow : Window
             {
                 if (!known.Add(printer.IpAddress)) return;
                 AddRow(printer);
-                Log($"  trouvée : {printer.IpAddress}  {printer.DisplayName}{(printer.SerialNumber is null ? "" : $"  (S/N {printer.SerialNumber})")}");
+                Log(T("  trouvée : ", "  found: ") + $"{printer.IpAddress}  {printer.DisplayName}{(printer.SerialNumber is null ? "" : $"  (S/N {printer.SerialNumber})")}");
             }), progress, _scanCts.Token);
-            Log($"Scan terminé en {(DateTime.Now - started).TotalSeconds:F0} s : {_rows.Count} imprimante(s).");
-            StatusText.Text = $"{_rows.Count} imprimante(s)";
-            if (_rows.Count == 0) EmptyHintTitle.Text = "Aucune imprimante trouvée : vérifie le réseau ou tape son IP";
+            Log(T($"Scan terminé en {(DateTime.Now - started).TotalSeconds:F0} s : {_rows.Count} imprimante(s).", $"Scan finished in {(DateTime.Now - started).TotalSeconds:F0} s: {_rows.Count} printer(s)."));
+            StatusText.Text = T($"{_rows.Count} imprimante(s)", $"{_rows.Count} printer(s)");
+            if (_rows.Count == 0) EmptyHintTitle.Text = T("Aucune imprimante trouvée : vérifie le réseau ou tape son IP", "No printer found: check the network or type its IP");
             await RefreshCupsModelsAsync();
             await RefreshInstalledHereAsync();
         }
-        catch (OperationCanceledException) { Log("Scan arrêté."); StatusText.Text = "Scan arrêté"; }
+        catch (OperationCanceledException) { Log(T("Scan arrêté.", "Scan stopped.")); StatusText.Text = T("Scan arrêté", "Scan stopped"); }
         finally
         {
             SetScanning(false);
@@ -239,17 +242,17 @@ public partial class MainWindow : Window
     {
         var existing = _rows.FirstOrDefault(r => r.Ip == ip.ToString());
         if (existing is not null) { SetSelection(new[] { existing }); return; }
-        StatusText.Text = $"Interrogation de {ip}…";
+        StatusText.Text = T($"Interrogation de {ip}…", $"Querying {ip}…");
         var printer = await new PrinterScanner().ProbeAsync(ip, requirePrinterEvidence: false);
         if (printer is null)
         {
-            Log($"{ip} ne répond ni en SNMP ni sur les ports d'impression : ajoutée quand même (icône grise), choisis le pilote dans son menu.");
+            Log(T($"{ip} ne répond ni en SNMP ni sur les ports d'impression : ajoutée quand même (icône grise), choisis le pilote dans son menu.", $"{ip} answers neither SNMP nor printing ports: added anyway (grey icon), pick the driver in its menu."));
             printer = new DiscoveredPrinter { IpAddress = ip.ToString() };
         }
         var row = AddRow(printer);
         SetSelection(new[] { row });
-        Log($"Ajoutée à la main : {printer.IpAddress}  {printer.DisplayName}");
-        StatusText.Text = "Prêt";
+        Log(T("Ajoutée à la main : ", "Added manually: ") + $"{printer.IpAddress}  {printer.DisplayName}");
+        StatusText.Text = Strings.Get("Ready");
         await RefreshCupsModelsAsync();
         await RefreshInstalledHereAsync();
     }
@@ -260,7 +263,7 @@ public partial class MainWindow : Window
         row.SetDefaultName(DefaultNameFor(printer));
         row.IpChanged += (r, oldIp) =>
         {
-            Log($"IP modifiée à la main : {oldIp} → {r.Ip} ({r.Printer.DisplayName}).");
+            Log(T("IP modifiée à la main : ", "IP changed manually: ") + $"{oldIp} → {r.Ip} ({r.Printer.DisplayName}).");
             r.SetDefaultName(DefaultNameFor(r.Printer));
         };
         var key = IpRange.ToUInt(IPAddress.Parse(printer.IpAddress));
@@ -311,9 +314,9 @@ public partial class MainWindow : Window
         MultiPanel.IsVisible = _selected.Count > 1;
         if (_selected.Count > 1)
         {
-            MultiTitle.Text = $"{_selected.Count} imprimantes sélectionnées";
+            MultiTitle.Text = T($"{_selected.Count} imprimantes sélectionnées", $"{_selected.Count} printers selected");
             MultiText.Text = string.Join(" · ", _selected.Select(r => r.TileTitle));
-            MultiInstallText.Text = $"Installer les {_selected.Count}";
+            MultiInstallText.Text = T($"Installer les {_selected.Count}", $"Install all {_selected.Count}");
         }
     }
 
@@ -326,20 +329,20 @@ public partial class MainWindow : Window
         Directory.CreateDirectory(DriversFolder);
         if (_platform.UsesWindowsDrivers)
         {
-            LibraryText.Text = "Lecture des pilotes…";
+            LibraryText.Text = T("Lecture des pilotes…", "Reading drivers…");
             if (!File.Exists(CatalogPath))
                 try { await File.WriteAllTextAsync(CatalogPath, DriverCatalog.Default().ToJson()); } catch { }
             var (lib, cat) = await Task.Run(() => (DriverLibrary.Load(DriversFolder), File.Exists(CatalogPath) ? DriverCatalog.Load(CatalogPath) : DriverCatalog.Default()));
             _library = lib; _catalog = cat;
             _matcher = new DriverMatcher(_library, _catalog);
             var brands = _library.BrandsAvailable.ToList();
-            LibraryText.Text = _library.Drivers.Count == 0 ? "Pilotes téléchargés à l'installation" : $"{_library.Drivers.Count} pilotes · {string.Join(", ", brands)}";
+            LibraryText.Text = _library.Drivers.Count == 0 ? T("Pilotes téléchargés à l'installation", "Drivers downloaded at install time") : T($"{_library.Drivers.Count} pilotes", $"{_library.Drivers.Count} drivers") + $" · {string.Join(", ", brands)}";
         }
         else
         {
-            LibraryText.Text = "Lecture des pilotes CUPS…";
+            LibraryText.Text = T("Lecture des pilotes CUPS…", "Reading CUPS drivers…");
             await _cups.LoadAsync(DriversFolder);
-            LibraryText.Text = $"CUPS · {_cups.Models.Count} pilotes disponibles";
+            LibraryText.Text = T($"CUPS · {_cups.Models.Count} pilotes disponibles", $"CUPS · {_cups.Models.Count} drivers available");
         }
         foreach (var row in _rows) row.ReplaceDrivers(Candidates(row.Printer));
         if (_installedHere.Count > 0) await RefreshInstalledHereAsync(reload: false);
@@ -355,9 +358,9 @@ public partial class MainWindow : Window
         {
             var before = row.SelectedDriver?.Choice.InfPath;
             row.ReplaceDrivers(Candidates(row.Printer));
-            if (row.SelectedDriver?.Choice.InfPath != before) Log($"Pilote proposé pour {row.Printer.DisplayName} : {row.SelectedDriver?.Choice.DriverName}");
+            if (row.SelectedDriver?.Choice.InfPath != before) Log(T($"Pilote proposé pour {row.Printer.DisplayName} : ", $"Suggested driver for {row.Printer.DisplayName}: ") + row.SelectedDriver?.Choice.DriverName);
         }
-        LibraryText.Text = $"CUPS · {_cups.Models.Count} pilotes disponibles";
+        LibraryText.Text = T($"CUPS · {_cups.Models.Count} pilotes disponibles", $"CUPS · {_cups.Models.Count} drivers available");
     }
 
     private async Task<bool> WaitDriversIdleAsync()
@@ -382,20 +385,20 @@ public partial class MainWindow : Window
                 var progress = new Progress<DownloadProgress>(p =>
                 {
                     var pct = p.Total is > 0 ? $"{100 * p.Received / p.Total.Value} %" : p.Stage;
-                    foreach (var r in rows) r.Status = p.Stage == "Téléchargement" ? $"Pilote : {pct}" : p.Stage + "…";
+                    foreach (var r in rows) r.Status = p.Stage == "Téléchargement" ? T("Pilote : ", "Driver: ") + pct : StageText(p.Stage) + "…";
                 });
                 ProvisionResult result;
                 try { result = await Task.Run(() => prov.EnsureAsync(brand, progress)); }
-                catch (Exception ex) { Log($"Pilote {brand} : {ex.Message}"); continue; }
+                catch (Exception ex) { Log(T($"Pilote {brand} : ", $"{brand} driver: ") + ex.Message); continue; }
                 foreach (var line in result.Log) Log($"    {line}");
                 Log(result.Outcome switch
                 {
-                    ProvisionOutcome.AlreadyPostScript => $"Pilote {brand} : PostScript déjà présent ({result.DriverName}).",
-                    ProvisionOutcome.DownloadedPostScript => $"Pilote {brand} : PostScript téléchargé ({result.DriverName}).",
-                    ProvisionOutcome.AlreadyPcl => $"Pilote {brand} : PCL déjà présent ({result.DriverName}).",
-                    ProvisionOutcome.DownloadedPcl => $"Pilote {brand} : PCL téléchargé ({result.DriverName}).",
-                    ProvisionOutcome.ManualOnly => $"Pilote {brand} : pas de lien direct chez {brand}, essai sur Windows Update…",
-                    _ => $"Pilote {brand} : rien trouvé chez le constructeur, essai sur Windows Update…",
+                    ProvisionOutcome.AlreadyPostScript => T($"Pilote {brand} : PostScript déjà présent ({result.DriverName}).", $"{brand} driver: PostScript already present ({result.DriverName})."),
+                    ProvisionOutcome.DownloadedPostScript => T($"Pilote {brand} : PostScript téléchargé ({result.DriverName}).", $"{brand} driver: PostScript downloaded ({result.DriverName})."),
+                    ProvisionOutcome.AlreadyPcl => T($"Pilote {brand} : PCL déjà présent ({result.DriverName}).", $"{brand} driver: PCL already present ({result.DriverName})."),
+                    ProvisionOutcome.DownloadedPcl => T($"Pilote {brand} : PCL téléchargé ({result.DriverName}).", $"{brand} driver: PCL downloaded ({result.DriverName})."),
+                    ProvisionOutcome.ManualOnly => T($"Pilote {brand} : pas de lien direct chez {brand}, essai sur Windows Update…", $"{brand} driver: no direct link from {brand}, trying Windows Update…"),
+                    _ => T($"Pilote {brand} : rien trouvé chez le constructeur, essai sur Windows Update…", $"{brand} driver: nothing found at the manufacturer, trying Windows Update…"),
                 });
             }
         }
@@ -412,7 +415,7 @@ public partial class MainWindow : Window
         var progress = new Progress<DownloadProgress>(p =>
         {
             var pct = p.Total is > 0 ? $"{100 * p.Received / p.Total.Value} %" : p.Stage;
-            foreach (var r in rows) r.Status = p.Stage == "Téléchargement" ? $"Pilote : {pct}" : p.Stage + "…";
+            foreach (var r in rows) r.Status = p.Stage == "Téléchargement" ? T("Pilote : ", "Driver: ") + pct : StageText(p.Stage) + "…";
         });
         try
         {
@@ -421,7 +424,7 @@ public partial class MainWindow : Window
             foreach (var l in lines) Log($"    {l}");
             return dir is not null;
         }
-        catch (Exception ex) { Log($"    Windows Update indisponible pour {model} : {ex.Message}"); return false; }
+        catch (Exception ex) { Log(T($"    Windows Update indisponible pour {model} : ", $"    Windows Update unavailable for {model}: ") + ex.Message); return false; }
         finally { foreach (var r in rows) { r.Spinning = false; r.Status = ""; } }
     }
 
@@ -430,16 +433,16 @@ public partial class MainWindow : Window
     private async Task PickDriverFilesAsync()
     {
         var types = _platform.UsesWindowsDrivers
-            ? new FilePickerFileType("Pilote") { Patterns = new[] { "*.zip", "*.exe", "*.inf", "*.cab", "*.msi", "*.7z" } }
-            : new FilePickerFileType("Pilote PPD") { Patterns = new[] { "*.ppd", "*.PPD" } };
-        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions { Title = "Importer un pilote", AllowMultiple = true, FileTypeFilter = new[] { types } });
+            ? new FilePickerFileType(T("Pilote", "Driver")) { Patterns = new[] { "*.zip", "*.exe", "*.inf", "*.cab", "*.msi", "*.7z" } }
+            : new FilePickerFileType(T("Pilote PPD", "PPD driver")) { Patterns = new[] { "*.ppd", "*.PPD" } };
+        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions { Title = T("Importer un pilote", "Import a driver"), AllowMultiple = true, FileTypeFilter = new[] { types } });
         var paths = files.Select(f => f.TryGetLocalPath()).Where(p => p is not null).Select(p => p!).ToList();
         if (paths.Count > 0) await ImportDriversAsync(paths);
     }
 
     private async Task PickDriverFolderAsync()
     {
-        var dirs = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions { Title = "Dossier du pilote" });
+        var dirs = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions { Title = T("Dossier du pilote", "Driver folder") });
         var paths = dirs.Select(f => f.TryGetLocalPath()).Where(p => p is not null).Select(p => p!).ToList();
         if (paths.Count > 0) await ImportDriversAsync(paths);
     }
@@ -449,7 +452,7 @@ public partial class MainWindow : Window
         var imported = 0;
         foreach (var path in paths)
         {
-            Log($"Import du pilote : {path}");
+            Log(T("Import du pilote : ", "Importing driver: ") + path);
             try
             {
                 if (_platform.UsesWindowsDrivers)
@@ -463,7 +466,7 @@ public partial class MainWindow : Window
                     var ppds = Directory.Exists(path)
                         ? Directory.EnumerateFiles(path, "*.ppd", new EnumerationOptions { RecurseSubdirectories = true, MatchCasing = MatchCasing.CaseInsensitive }).ToList()
                         : path.EndsWith(".ppd", StringComparison.OrdinalIgnoreCase) ? new List<string> { path } : new List<string>();
-                    if (ppds.Count == 0) { Log("    ✗ aucun fichier .ppd (sous Linux/macOS, il faut le PPD du constructeur)"); continue; }
+                    if (ppds.Count == 0) { Log(T("    ✗ aucun fichier .ppd (sous Linux/macOS, il faut le PPD du constructeur)", "    ✗ no .ppd file (on Linux/macOS, the manufacturer's PPD is needed)")); continue; }
                     foreach (var ppd in ppds)
                     {
                         var nick = CupsDriverSource.ReadNickName(ppd) ?? Path.GetFileNameWithoutExtension(ppd);
@@ -481,10 +484,10 @@ public partial class MainWindow : Window
         if (imported > 0)
         {
             await LoadDriversAsync();
-            Log("Pilote importé : il est maintenant proposé en premier (★) pour sa marque.");
-            StatusText.Text = $"{imported} pilote(s) importé(s)";
+            Log(T("Pilote importé : il est maintenant proposé en premier (★) pour sa marque.", "Driver imported: it is now suggested first (★) for its brand."));
+            StatusText.Text = T($"{imported} pilote(s) importé(s)", $"{imported} driver(s) imported");
         }
-        else Warn("Aucun pilote importé (détail dans le journal).");
+        else Warn(T("Aucun pilote importé (détail dans le journal).", "No driver imported (details in the log)."));
     }
 
     // ------------------------------------------------------------------ Déjà installées sur ce poste ?
@@ -494,7 +497,7 @@ public partial class MainWindow : Window
         if (reload)
         {
             try { _installedHere = await _platform.ListInstalledAsync(); }
-            catch (Exception ex) { Log($"Lecture des imprimantes de ce poste impossible : {ex.Message}"); return; }
+            catch (Exception ex) { Log(T("Lecture des imprimantes de ce poste impossible : ", "Cannot read this computer's printers: ") + ex.Message); return; }
         }
         var outdatedCount = 0;
         foreach (var row in _rows)
@@ -517,7 +520,7 @@ public partial class MainWindow : Window
         }
         var already = _rows.Count(r => r.IsInstalledHere);
         if (already > 0 && reload)
-            Log($"Sur ce poste : {already} imprimante(s) déjà installée(s){(outdatedCount > 0 ? $", dont {outdatedCount} avec un pilote à mettre à jour (point orange)" : ", pilotes à jour")}.");
+            Log(T($"Sur ce poste : {already} imprimante(s) déjà installée(s){(outdatedCount > 0 ? $", dont {outdatedCount} avec un pilote à mettre à jour (point orange)" : ", pilotes à jour")}.", $"On this computer: {already} printer(s) already installed{(outdatedCount > 0 ? $", {outdatedCount} with a driver to update (orange dot)" : ", drivers up to date")}."));
         UpdateSelectionCount();
     }
 
@@ -533,7 +536,7 @@ public partial class MainWindow : Window
         {
             if (IpRange.TryParseV4(i.Ip, out _)) continue; // adresse IP : déjà comparée
             var text = System.Text.RegularExpressions.Regex.Replace($"{i.Name} {i.DriverName} {Uri.UnescapeDataString(i.Ip)}", "[^A-Za-z0-9]", "").ToUpperInvariant();
-            if (text.Contains(key)) return i with { DriverName = i.DriverName + " — ajoutée automatiquement par le système" };
+            if (text.Contains(key)) return i with { DriverName = i.DriverName + T(" — ajoutée automatiquement par le système", " — added automatically by the system") };
         }
         return null;
     }
@@ -559,7 +562,7 @@ public partial class MainWindow : Window
         FocusManager?.ClearFocus();
         SetBusy(true);
         SetSelection(Array.Empty<PrinterTile>());
-        foreach (var r in rows) { r.State = TileState.Working; r.Working = true; r.Progress = 0; r.StatusDetail = ""; r.Status = "En attente…"; }
+        foreach (var r in rows) { r.State = TileState.Working; r.Working = true; r.Progress = 0; r.StatusDetail = ""; r.Status = T("En attente…", "Waiting…"); }
         var done = new List<(PrinterTile Row, string Name)>();
         try
         {
@@ -571,7 +574,7 @@ public partial class MainWindow : Window
                 if (brands.Count > 0)
                 {
                     var waiting = rows.Where(r => brands.Contains(r.Printer.Brand)).ToList();
-                    foreach (var r in waiting) { r.Status = "Téléchargement du pilote…"; r.Spinning = true; }
+                    foreach (var r in waiting) { r.Status = T("Téléchargement du pilote…", "Downloading driver…"); r.Spinning = true; }
                     try
                     {
                         await ProvisionBrandsAsync(brands);
@@ -583,10 +586,10 @@ public partial class MainWindow : Window
                             if (await FetchFromWindowsUpdateAsync(brand, model)) added = true;
                         if (added) await LoadDriversAsync();
                     }
-                    finally { foreach (var r in waiting) { r.Spinning = false; r.Status = "En attente…"; } }
+                    finally { foreach (var r in waiting) { r.Spinning = false; r.Status = T("En attente…", "Waiting…"); } }
                 }
                 foreach (var r in rows.Where(Generic))
-                    Log($"⚠ {r.Printer.DisplayName} : aucun pilote {r.Printer.Brand} trouvé (ni PostScript, ni PCL, ni Windows Update) — pilote générique. Glisse le pilote du constructeur sur la fenêtre pour l'utiliser.");
+                    Log(T($"⚠ {r.Printer.DisplayName} : aucun pilote {r.Printer.Brand} trouvé (ni PostScript, ni PCL, ni Windows Update) — pilote générique. Glisse le pilote du constructeur sur la fenêtre pour l'utiliser.", $"⚠ {r.Printer.DisplayName}: no {r.Printer.Brand} driver found (no PostScript, PCL or Windows Update) — generic driver. Drop the manufacturer's driver on the window to use it."));
             }
 
             // 2. Installation, une imprimante après l'autre
@@ -594,14 +597,14 @@ public partial class MainWindow : Window
             foreach (var row in rows)
             {
                 n++;
-                StatusText.Text = rows.Count > 1 ? $"Installation {n}/{rows.Count} : {row.Printer.DisplayName}…" : $"Installation de {row.Printer.DisplayName}…";
+                StatusText.Text = rows.Count > 1 ? T($"Installation {n}/{rows.Count} : {row.Printer.DisplayName}…", $"Installing {n}/{rows.Count}: {row.Printer.DisplayName}…") : T($"Installation de {row.Printer.DisplayName}…", $"Installing {row.Printer.DisplayName}…");
                 var name = await InstallOneAsync(row);
                 if (name is not null) done.Add((row, name));
             }
             UpdateSelectionCount();
             if (done.Count == 0)
             {
-                StatusText.Text = "Échec de l'installation : ouvre le journal pour le détail";
+                StatusText.Text = T("Échec de l'installation : ouvre le journal pour le détail", "Installation failed: open the log for details");
                 return;
             }
 
@@ -612,10 +615,10 @@ public partial class MainWindow : Window
                 var setDefault = name == defaultName;
                 if (!setDefault && !testPages) continue;
                 foreach (var s in await _platform.FinishAsync(name, setDefault, testPages))
-                    Log($"    {(s.Success ? (s.IsWarning ? "!" : "✓") : "✗")} {name} — {s.Step} : {s.Detail}");
+                    Log($"    {(s.Success ? (s.IsWarning ? "!" : "✓") : "✗")} {name} — {Step(s.Step)} : {s.Detail}");
             }
-            StatusText.Text = done.Count == 1 ? $"« {done[0].Name} » est prête"
-                : $"{done.Count} imprimante(s) installée(s){(rows.Count > done.Count ? $", {rows.Count - done.Count} en échec" : "")}";
+            StatusText.Text = done.Count == 1 ? T($"« {done[0].Name} » est prête", $"\"{done[0].Name}\" is ready")
+                : T($"{done.Count} imprimante(s) installée(s){(rows.Count > done.Count ? $", {rows.Count - done.Count} en échec" : "")}", $"{done.Count} printer(s) installed{(rows.Count > done.Count ? $", {rows.Count - done.Count} failed" : "")}");
             await RefreshInstalledHereAsync();
         }
         finally
@@ -637,29 +640,29 @@ public partial class MainWindow : Window
             ReplaceExisting = _settings.ReplaceExisting,
         };
         var driver = row.SelectedDriver?.Choice ?? Candidates(row.Printer).First();
-        Log($"Installation : {row.Printer.IpAddress}  {row.Printer.DisplayName}  —  pilote « {driver.DriverName} »");
+        Log(T($"Installation : {row.Printer.IpAddress}  {row.Printer.DisplayName}  —  pilote « {driver.DriverName} »", $"Installing: {row.Printer.IpAddress}  {row.Printer.DisplayName}  —  driver \"{driver.DriverName}\""));
 
         var steps = new List<string> { "Pilote", "Port", "Imprimante", "Réglages", "État", "Auto-ajout Windows" };
         if (!_platform.UsesWindowsDrivers) steps.Remove("Auto-ajout Windows");
         var labels = new Dictionary<string, string>
         {
-            ["Pilote"] = "Installation du pilote…", ["Port"] = "Création du port…", ["Imprimante"] = "Ajout de l'imprimante…",
-            ["Réglages"] = "Réglages…", ["État"] = "Vérification…", ["Auto-ajout Windows"] = "Finitions…",
+            ["Pilote"] = T("Installation du pilote…", "Installing driver…"), ["Port"] = T("Création du port…", "Creating port…"), ["Imprimante"] = T("Ajout de l'imprimante…", "Adding printer…"),
+            ["Réglages"] = T("Réglages…", "Settings…"), ["État"] = T("Vérification…", "Checking…"), ["Auto-ajout Windows"] = T("Finitions…", "Finishing…"),
         };
         row.Progress = 0.06;
-        row.Status = _platform.UsesWindowsDrivers ? "Préparation…" : "Autorisation administrateur…";
+        row.Status = _platform.UsesWindowsDrivers ? T("Préparation…", "Preparing…") : T("Autorisation administrateur…", "Administrator authorization…");
         var started = DateTime.Now;
         var live = new Progress<StepProgress>(p =>
         {
             var i = steps.IndexOf(p.Step);
             if (p.Status == "START")
             {
-                row.Status = labels.TryGetValue(p.Step, out var l) ? l : p.Step + "…";
+                row.Status = labels.TryGetValue(p.Step, out var l) ? l : Step(p.Step) + "…";
                 if (i >= 0) row.Progress = Math.Max(row.Progress, (i + 0.3) / steps.Count);
                 return;
             }
             if (i >= 0) row.Progress = Math.Max(row.Progress, (i + 1.0) / steps.Count);
-            Log($"    {(p.Status == "FAIL" ? "✗" : p.Status == "WARN" ? "!" : "✓")} {p.Step} : {p.Detail}");
+            Log($"    {(p.Status == "FAIL" ? "✗" : p.Status == "WARN" ? "!" : "✓")} {Step(p.Step)} : {p.Detail}");
         });
 
         InstallResult result;
@@ -670,14 +673,14 @@ public partial class MainWindow : Window
             result.Steps.Add(new StepResult { Step = "Lancement", Success = false, Detail = ex.Message });
         }
         foreach (var s in result.Steps.Where(s => s.Step is "Lancement" or "Délai" or "PowerShell"))
-            Log($"    ✗ {s.Step} : {s.Detail}");
+            Log($"    ✗ {Step(s.Step)} : {s.Detail}");
 
-        row.StatusDetail = string.Join("\n", result.Steps.Select(s => $"{s.Status} — {s.Step} : {s.Detail}"));
+        row.StatusDetail = string.Join("\n", result.Steps.Select(s => $"{s.Status} — {Step(s.Step)} : {s.Detail}"));
         row.Progress = 1;
         row.State = !result.Success ? TileState.Failed : result.Steps.Any(s => s.IsWarning) ? TileState.Warning : TileState.Done;
         row.Status = "";
         row.Working = false;
-        Log(result.Success ? $"  → installée sous « {result.WindowsName} » en {(DateTime.Now - started).TotalSeconds:F0} s" : "  → échec (détail ci-dessus)");
+        Log(result.Success ? T($"  → installée sous « {result.WindowsName} » en {(DateTime.Now - started).TotalSeconds:F0} s", $"  → installed as \"{result.WindowsName}\" in {(DateTime.Now - started).TotalSeconds:F0} s") : T("  → échec (détail ci-dessus)", "  → failed (details above)"));
         return result.Success ? result.WindowsName ?? row.WindowsName : null;
     }
 
@@ -685,14 +688,14 @@ public partial class MainWindow : Window
     {
         var tcs = new TaskCompletionSource<(string?, bool)>();
         var single = names.Count == 1;
-        FinishTitle.Text = single ? $"{names[0]} est installée" : $"{names.Count} imprimantes installées";
-        FinishSubtitle.Text = failed > 0 ? $"{failed} en échec (voir le journal). Dernière étape :" : "Dernière étape :";
+        FinishTitle.Text = single ? T($"{names[0]} est installée", $"{names[0]} is installed") : T($"{names.Count} imprimantes installées", $"{names.Count} printers installed");
+        FinishSubtitle.Text = failed > 0 ? T($"{failed} en échec (voir le journal). Dernière étape :", $"{failed} failed (see the log). Last step:") : T("Dernière étape :", "Last step:");
         DefaultCheck.IsVisible = single;
         DefaultPanel.IsVisible = !single;
         DefaultCheck.IsChecked = true;
-        DefaultCombo.ItemsSource = new[] { "Aucune (ne rien changer)" }.Concat(names).ToList();
+        DefaultCombo.ItemsSource = new[] { T("Aucune (ne rien changer)", "None (don't change)") }.Concat(names).ToList();
         DefaultCombo.SelectedIndex = 0;
-        TestPageCheck.Content = single ? "Imprimer une page de test" : "Imprimer une page de test sur chacune";
+        TestPageCheck.Content = single ? Strings.Get("TestPage") : T("Imprimer une page de test sur chacune", "Print a test page on each");
         TestPageCheck.IsChecked = single;
         FinishOverlay.IsVisible = true;
         void Done(object? _, RoutedEventArgs __)
@@ -724,8 +727,8 @@ public partial class MainWindow : Window
             _allDrivers = BuildDriverList();
             var brands = _allDrivers.Select(d => d.Brand).Distinct().ToList();
             var keep = BrandFilter.SelectedItem as string;
-            BrandFilter.ItemsSource = new[] { "Toutes les marques" }.Concat(brands).ToList();
-            BrandFilter.SelectedItem = keep is not null && brands.Contains(keep) ? keep : "Toutes les marques";
+            BrandFilter.ItemsSource = new[] { AllBrands }.Concat(brands).ToList();
+            BrandFilter.SelectedItem = keep is not null && brands.Contains(keep) ? keep : AllBrands;
             // Imprimante choisie : sa marque est ouverte et amenée à l'écran (les autres restent fermées)
             var focus = _current is not null && brands.Contains(_current.Printer.Brand) ? _current.Printer.Brand : null;
             if (focus is not null) _expandedBrands.Add(focus);
@@ -744,12 +747,12 @@ public partial class MainWindow : Window
             foreach (var d in _library.Drivers)
             {
                 var kind = d.IsImported ? DriverMatchKind.Imported : d.IsWindowsUpdate ? DriverMatchKind.ExactModel : DriverMatchKind.BrandUniversal;
-                var source = d.IsImported ? "importé" : d.IsWindowsUpdate ? "Windows Update" : "téléchargé";
+                var source = d.IsImported ? T("importé", "imported") : d.IsWindowsUpdate ? "Windows Update" : T("téléchargé", "downloaded");
                 drivers.Add((d.Brand, new DriverChoice(d.Name, d.InfPath, kind, source),
                     $"{source}{(d.Version is null ? "" : " · " + d.Version)}{(d.InfPath is null ? "" : " · " + Path.GetFileName(d.InfPath))}"));
             }
             foreach (var g in _catalog.InboxFallback.Append("Microsoft PCL6 Class Driver").Distinct())
-                drivers.Add(("Windows (générique)", new DriverChoice(g, null, DriverMatchKind.GenericInbox, "Pilote générique Windows"), "intégré à Windows"));
+                drivers.Add((GenericWindows, new DriverChoice(g, null, DriverMatchKind.GenericInbox, T("Pilote générique Windows", "Generic Windows driver")), T("intégré à Windows", "built into Windows")));
         }
         else
         {
@@ -760,22 +763,22 @@ public partial class MainWindow : Window
                     : m.Id == CupsScripts.Everywhere || m.Id.StartsWith("driverless:", StringComparison.OrdinalIgnoreCase) ? DriverMatchKind.Driverless
                     : m.Description.StartsWith("Generic", StringComparison.OrdinalIgnoreCase) ? DriverMatchKind.GenericInbox
                     : DriverMatchKind.ExactModel;
-                var brand = kind is DriverMatchKind.GenericInbox ? "Génériques" : Brands.Detect(m.Description);
+                var brand = kind is DriverMatchKind.GenericInbox ? GenericGroup : Brands.Detect(m.Description);
                 if (brand == Brands.Unknown)
                 {
                     var first = m.Description.Split(' ', 2)[0];
-                    brand = first.Length > 1 ? char.ToUpper(first[0]) + first[1..] : "Autres";
+                    brand = first.Length > 1 ? char.ToUpper(first[0]) + first[1..] : T("Autres", "Others");
                 }
                 drivers.Add((brand, new DriverChoice(m.Description, m.Id, kind, "CUPS"), m.Id));
             }
         }
 
         var list = new List<DriverListItem>();
-        foreach (var g in drivers.GroupBy(d => d.Brand).OrderBy(g => g.Key.StartsWith("Génériques") || g.Key.StartsWith("Windows (") ? "zz" : g.Key, StringComparer.OrdinalIgnoreCase))
+        foreach (var g in drivers.GroupBy(d => d.Brand).OrderBy(g => g.Key == GenericGroup || g.Key == GenericWindows ? "zz" : g.Key, StringComparer.OrdinalIgnoreCase))
         {
             var items = g.GroupBy(d => d.Choice.InfPath ?? d.Choice.DriverName).Select(x => x.First())
                          .OrderBy(d => d.Choice.DriverName, NaturalComparer.Instance).ToList();
-            list.Add(new DriverListItem { IsHeader = true, Brand = g.Key, Detail = $"{items.Count} pilote(s)", SearchKey = DriverListItem.Key(g.Key) });
+            list.Add(new DriverListItem { IsHeader = true, Brand = g.Key, Detail = T($"{items.Count} pilote(s)", $"{items.Count} driver(s)"), SearchKey = DriverListItem.Key(g.Key) });
             list.AddRange(items.Select(d => new DriverListItem
             {
                 Brand = g.Key, Title = d.Choice.DriverName, Detail = d.Detail, Choice = d.Choice,
@@ -813,7 +816,7 @@ public partial class MainWindow : Window
             var header = new DriverListItem
             {
                 IsHeader = true, Brand = group.Key, IsExpanded = open,
-                Detail = words.Count > 0 ? $"{matches.Count} pilote(s) trouvé(s)" : $"{matches.Count} pilote(s)",
+                Detail = words.Count > 0 ? T($"{matches.Count} pilote(s) trouvé(s)", $"{matches.Count} driver(s) found") : T($"{matches.Count} pilote(s)", $"{matches.Count} driver(s)"),
             };
             result.Add(header);
             if (group.Key == keepBrand) keep = header;
@@ -825,8 +828,8 @@ public partial class MainWindow : Window
         var total = _allDrivers.Count(d => d.IsDriver);
         var brands = result.Count(r => r.IsHeader);
         DriverCountText.Text = words.Count == 0 && brand is null
-            ? $"{brands} fabricants · {total} pilotes sur ce poste ({_platform.Name}) — clique sur un fabricant pour voir ses pilotes"
-            : $"{count} pilote(s) sur {total}{(count == 0 ? " — essaie un autre mot (juste le numéro du modèle, par exemple)" : "")}";
+            ? T($"{brands} fabricants · {total} pilotes sur ce poste ({_platform.Name}) — clique sur un fabricant pour voir ses pilotes", $"{brands} manufacturers · {total} drivers on this computer ({_platform.Name}) — click a manufacturer to see its drivers")
+            : T($"{count} pilote(s) sur {total}{(count == 0 ? " — essaie un autre mot (juste le numéro du modèle, par exemple)" : "")}", $"{count} driver(s) out of {total}{(count == 0 ? " — try another word (just the model number, for example)" : "")}");
         UpdateUseDriverButton();
     }
 
@@ -834,10 +837,10 @@ public partial class MainWindow : Window
     {
         var item = DriverList.SelectedItem as DriverListItem;
         UseDriverButton.IsEnabled = _current is not null && item?.Choice is not null && !_busy;
-        UseDriverButton.Content = _current is null ? "Utiliser pour l'imprimante" : $"Utiliser pour {_current.TileTitle}";
+        UseDriverButton.Content = _current is null ? Strings.Get("UseForPrinter") : T($"Utiliser pour {_current.TileTitle}", $"Use for {_current.TileTitle}");
         UseDriverHint.Text = _current is null
-            ? "Choisis d'abord une imprimante dans « Imprimantes », puis un pilote ici (double-clic ou bouton)."
-            : "Double-clic sur un pilote, ou bouton à droite, pour l'utiliser.";
+            ? Strings.Get("UseDriverHintNone")
+            : T("Double-clic sur un pilote, ou bouton à droite, pour l'utiliser.", "Double-click a driver, or use the button on the right, to use it.");
     }
 
     private void UseSelectedDriver()
@@ -848,24 +851,55 @@ public partial class MainWindow : Window
         if (option is null)
         {
             // Pilote choisi à la main : ajouté en tête de la liste de la tuile, marqué comme choix du technicien
-            var manual = choice with { Reason = "Choisi dans l'onglet Pilotes" };
+            var manual = choice with { Reason = T("Choisi dans l'onglet Pilotes", "Picked in the Drivers tab") };
             tile.ReplaceDrivers(new[] { manual }.Concat(tile.Drivers.Select(o => o.Choice)));
             option = tile.Drivers[0];
         }
         tile.SelectedDriver = option;
-        Log($"Pilote choisi à la main pour {tile.Printer.DisplayName} : {choice.DriverName}");
+        Log(T($"Pilote choisi à la main pour {tile.Printer.DisplayName} : ", $"Driver picked manually for {tile.Printer.DisplayName}: ") + choice.DriverName);
         DriversTabButton.IsChecked = false;
         SetSelection(new[] { tile });
     }
 
     // ------------------------------------------------------------------ Divers
 
+    private static string AllBrands => T("Toutes les marques", "All brands");
+    private static string GenericGroup => T("Génériques", "Generic");
+    private static string GenericWindows => T("Windows (générique)", "Windows (generic)");
+
+    private static string StageText(string stage) => stage switch
+    {
+        "Téléchargement" => T("Téléchargement", "Downloading"),
+        "Vérification" => T("Vérification", "Checking"),
+        "Décompression" or "Extraction" => T("Décompression", "Extracting"),
+        _ => stage,
+    };
+
+    /// <summary>Français ↔ anglais : la fenêtre est recréée dans l'autre langue (sauf pendant une installation).</summary>
+    private void SwitchLanguage()
+    {
+        if (_busy) return;
+        _scanCts?.Cancel();
+        En = !En;
+        _settings.Language = En ? "en" : "fr";
+        _settings.Save();
+        var next = new MainWindow(_settings);
+        if (Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
+            desktop.MainWindow = next;
+        next.Position = Position;
+        next.Width = Width; next.Height = Height;
+        next.WindowState = WindowState;
+        next.Show();
+        Close();
+    }
+
     private void UpdateSelectionCount()
     {
         var done = _rows.Count(r => r.State is TileState.Done or TileState.Warning);
         var outdated = _rows.Count(r => r.NeedsDriverUpdate);
-        SelectionCountText.Text = _rows.Count == 0 ? "Clique sur une imprimante pour l'installer, Ctrl + clic pour en choisir plusieurs."
-            : $"{_rows.Count} imprimante(s) trouvée(s){(done > 0 ? $" · {done} installée(s)" : "")}{(outdated > 0 ? $" · {outdated} pilote(s) à mettre à jour" : "")} — clic pour installer, Ctrl + clic pour en choisir plusieurs.";
+        SelectionCountText.Text = _rows.Count == 0 ? Strings.Get("ClickHint")
+            : T($"{_rows.Count} imprimante(s) trouvée(s){(done > 0 ? $" · {done} installée(s)" : "")}{(outdated > 0 ? $" · {outdated} pilote(s) à mettre à jour" : "")} — clic pour installer, Ctrl + clic pour en choisir plusieurs.",
+                $"{_rows.Count} printer(s) found{(done > 0 ? $" · {done} installed" : "")}{(outdated > 0 ? $" · {outdated} driver(s) to update" : "")} — click to install, Ctrl + click to select several.");
     }
 
     private void SetScanning(bool scanning)

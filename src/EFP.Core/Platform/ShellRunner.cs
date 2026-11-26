@@ -26,7 +26,7 @@ public sealed class ShellRunner : IScriptRunner
             else if (OperatingSystem.IsMacOS())
                 psi = new ProcessStartInfo("/usr/bin/osascript")
                 {
-                    ArgumentList = { "-e", $"do shell script \"/bin/sh '{file}' 2>&1\" with administrator privileges with prompt \"EZP doit installer une imprimante.\"" },
+                    ArgumentList = { "-e", $"do shell script \"/bin/sh '{file}' 2>&1\" with administrator privileges with prompt \"{Loc.T("EZP doit installer une imprimante.", "EZP needs to install a printer.")}\"" },
                 };
             else
                 psi = new ProcessStartInfo("pkexec") { ArgumentList = { "/bin/sh", file } };
@@ -70,7 +70,7 @@ public sealed class ShellRunner : IScriptRunner
             var err = stderr.ToString();
             // pkexec : 126 = mot de passe refusé / fenêtre fermée, 127 = pas d'agent d'authentification
             if (proc.ExitCode is 126 or 127 && Elevate && !IsRoot && stdout.Length == 0)
-                err = "Autorisation administrateur refusée ou impossible (mot de passe annulé ?). " + err;
+                err = Loc.T("Autorisation administrateur refusée ou impossible (mot de passe annulé ?). ", "Administrator authorization denied or unavailable (password cancelled?). ") + err;
             return new ScriptOutput(timedOut ? -1 : proc.ExitCode, stdout.ToString(), err, timedOut);
         }
         finally { try { File.Delete(file); } catch { } }
@@ -87,7 +87,7 @@ public sealed class ShellRunner : IScriptRunner
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
         cts.CancelAfter(timeout);
         try { await proc.WaitForExitAsync(cts.Token).ConfigureAwait(false); }
-        catch (OperationCanceledException) { try { proc.Kill(true); } catch { } throw new TimeoutException($"{exe} ne répond pas"); }
+        catch (OperationCanceledException) { try { proc.Kill(true); } catch { } throw new TimeoutException($"{exe} " + Loc.T("ne répond pas", "is not responding")); }
         return await read.ConfigureAwait(false);
     }
 }

@@ -62,7 +62,7 @@ public sealed class DriverProvisioner
         if (brand == Brands.Unknown)
         {
             result.Outcome = ProvisionOutcome.Failed;
-            result.Log.Add("Marque inconnue : pilote générique Windows.");
+            result.Log.Add(Loc.T("Marque inconnue : pilote générique Windows.", "Unknown brand: generic Windows driver."));
             return result;
         }
 
@@ -95,7 +95,7 @@ public sealed class DriverProvisioner
         {
             result.Outcome = ProvisionOutcome.AlreadyPcl;
             result.DriverName = current;
-            result.Log.Add($"Pas de PostScript disponible pour {brand} : PCL utilisé ({current}).");
+            result.Log.Add(Loc.T($"Pas de PostScript disponible pour {brand} : PCL utilisé ({current}).", $"No PostScript available for {brand}: PCL used ({current})."));
             return result;
         }
 
@@ -115,9 +115,9 @@ public sealed class DriverProvisioner
             ? ProvisionOutcome.ManualOnly
             : ProvisionOutcome.Failed;
         if (result.Outcome == ProvisionOutcome.ManualOnly)
-            result.Log.Add($"{brand} : licence à accepter sur le site du constructeur ({result.PageUrl}).");
+            result.Log.Add(Loc.T($"{brand} : licence à accepter sur le site du constructeur ({result.PageUrl}).", $"{brand}: license must be accepted on the manufacturer's site ({result.PageUrl})."));
         else if (packages.Count == 0)
-            result.Log.Add($"{brand} : marque pas encore suivie par EFP, pilote générique Windows.");
+            result.Log.Add(Loc.T($"{brand} : marque pas encore suivie par EZP, pilote générique Windows.", $"{brand}: brand not yet supported by EZP, generic Windows driver."));
         return result;
     }
 
@@ -129,14 +129,14 @@ public sealed class DriverProvisioner
         await _updater.CheckOneAsync(status, ct).ConfigureAwait(false);
         if (status.State == UpdateState.Error)
         {
-            result.Log.Add($"{pkg.Name} : source injoignable ({status.Error}).");
+            result.Log.Add(Loc.T($"{pkg.Name} : source injoignable ({status.Error}).", $"{pkg.Name}: source unreachable ({status.Error})."));
             return null;
         }
         if (status.State == UpdateState.UpToDate)
             return BestUniversal(_loadLibrary(), pkg.Brand);
         if (!status.CanDownload) return null;
 
-        result.Log.Add($"Téléchargement de {pkg.Name} {status.Latest?.Version}…");
+        result.Log.Add(Loc.T($"Téléchargement de {pkg.Name} {status.Latest?.Version}…", $"Downloading {pkg.Name} {status.Latest?.Version}…"));
         var up = await _updater.UpdateAsync(status, progress, ct).ConfigureAwait(false);
         result.Log.Add((up.Success ? "✓ " : "✗ ") + up.Message);
         return up.Success ? BestUniversal(_loadLibrary(), pkg.Brand) : null;

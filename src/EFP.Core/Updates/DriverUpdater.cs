@@ -145,12 +145,12 @@ public sealed class DriverUpdater
         var latest = s.Latest;
         if (latest?.DownloadUrl is null)
         {
-            result.Message = "Pas de téléchargement direct : ouvre la page du constructeur.";
+            result.Message = Loc.T("Pas de téléchargement direct : ouvre la page du constructeur.", "No direct download: open the manufacturer's page.");
             return result;
         }
         if (!latest.DownloadUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
         {
-            result.Message = "Lien refusé : seuls les téléchargements HTTPS sont acceptés.";
+            result.Message = Loc.T("Lien refusé : seuls les téléchargements HTTPS sont acceptés.", "Link refused: only HTTPS downloads are accepted.");
             return result;
         }
 
@@ -167,7 +167,7 @@ public sealed class DriverUpdater
             if (!VerifyHash(file, latest.Sha256, latest.Sha512, out var actual))
             {
                 File.Delete(file);
-                result.Message = $"Somme de contrôle incorrecte (fichier corrompu ou modifié) : {actual[..12]}…";
+                result.Message = Loc.T("Somme de contrôle incorrecte (fichier corrompu ou modifié) : ", "Wrong checksum (file corrupted or modified): ") + $"{actual[..12]}…";
                 return result;
             }
 
@@ -191,8 +191,8 @@ public sealed class DriverUpdater
                 result.NeedsManualExtraction = true;
                 result.Folder = manual;
                 result.Message = SevenZipPath is null || !File.Exists(SevenZipPath)
-                    ? "Téléchargé, mais archive .exe : ajoute 7za.exe dans Tools ou décompresse-la à la main dans Drivers."
-                    : "Téléchargé, mais aucun fichier .inf trouvé dans l'archive : à décompresser à la main.";
+                    ? Loc.T("Téléchargé, mais archive .exe : ajoute 7za.exe dans Tools ou décompresse-la à la main dans Drivers.", "Downloaded, but .exe archive: add 7za.exe to Tools or extract it manually into Drivers.")
+                    : Loc.T("Téléchargé, mais aucun fichier .inf trouvé dans l'archive : à décompresser à la main.", "Downloaded, but no .inf file found in the archive: extract it manually.");
                 return result;
             }
 
@@ -211,7 +211,7 @@ public sealed class DriverUpdater
             s.State = UpdateState.UpToDate;
             result.Success = true;
             result.Folder = target;
-            result.Message = $"Version {latest.Version} installée ({infCount} fichier(s) .inf).";
+            result.Message = Loc.T($"Version {latest.Version} installée ({infCount} fichier(s) .inf).", $"Version {latest.Version} installed ({infCount} .inf file(s)).");
             return result;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -232,7 +232,7 @@ public sealed class DriverUpdater
         using var resp = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         var total = resp.Content.Headers.ContentLength;
-        if (total > MaxDownloadBytes) throw new InvalidDataException("Fichier trop volumineux.");
+        if (total > MaxDownloadBytes) throw new InvalidDataException(Loc.T("Fichier trop volumineux.", "File too large."));
         var part = file + ".part";
         await using (var src = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false))
         await using (var dst = File.Create(part))
@@ -245,7 +245,7 @@ public sealed class DriverUpdater
             {
                 await dst.WriteAsync(buf.AsMemory(0, n), ct).ConfigureAwait(false);
                 received += n;
-                if (received > MaxDownloadBytes) throw new InvalidDataException("Fichier trop volumineux.");
+                if (received > MaxDownloadBytes) throw new InvalidDataException(Loc.T("Fichier trop volumineux.", "File too large."));
                 if ((DateTime.Now - lastReport).TotalMilliseconds > 200)
                 {
                     progress?.Report(new DownloadProgress(id, received, total, "Téléchargement"));
@@ -334,7 +334,7 @@ public sealed class DriverUpdater
         {
             var path = Path.GetFullPath(Path.Combine(dest, e.FullName.Replace('\\', '/')));
             if (!path.StartsWith(root, StringComparison.OrdinalIgnoreCase))
-                throw new InvalidDataException($"Archive refusée : chemin dangereux « {e.FullName} »");
+                throw new InvalidDataException(Loc.T($"Archive refusée : chemin dangereux « {e.FullName} »", $"Archive refused: unsafe path \"{e.FullName}\""));
             if (e.FullName.EndsWith('/') || e.FullName.EndsWith('\\')) { Directory.CreateDirectory(path); continue; }
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             e.ExtractToFile(path, overwrite: true);

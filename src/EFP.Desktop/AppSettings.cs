@@ -7,6 +7,8 @@ public sealed class AppSettings
 {
     /// <summary>"light", "dark" ou null (thème du système).</summary>
     public string? Theme { get; set; }
+    /// <summary>"fr", "en" ou null (langue du système).</summary>
+    public string? Language { get; set; }
     public string NameTemplate { get; set; } = "{Brand} {Model}";
     public bool DuplexByDefault { get; set; } = true;
     public bool ReplaceExisting { get; set; } = true;

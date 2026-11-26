@@ -49,19 +49,19 @@ public static class CupsScripts
         sb.AppendLine($"FALLBACK_URI={Q(p.HasRawPort ? $"socket://{p.IpAddress}:9100" : $"ipp://{p.IpAddress}/ipp/print")}");
         sb.AppendLine($"REPLACE={(o.ReplaceExisting ? 1 : 0)}; DUPLEX={(o.DuplexByDefault ? 1 : 0)}");
         sb.AppendLine($"MODELKEY={Q(PowerShellScripts.ModelKey(p.Model) ?? "")}");
-        sb.Append("""
+        sb.Append($$"""
 
             pp Pilote START ""
             if [ "$MODEL" = everywhere ]; then
                 pp Pilote OK "IPP / AirPrint"
             elif [ "${MODEL#driverless:}" != "$MODEL" ]; then
-                pp Pilote OK "IPP / AirPrint (fiche du modèle)"
+                pp Pilote OK "IPP / AirPrint ({{Loc.T("fiche du modèle", "model file")}})"
             elif [ -f "$MODEL" ]; then
                 pp Pilote OK "PPD $(basename "$MODEL")"
             elif lpinfo -m 2>/dev/null | grep -qF "$MODEL "; then
                 pp Pilote OK "$MODEL"
             else
-                pp Pilote WARN "$MODEL introuvable dans CUPS : PostScript générique"
+                pp Pilote WARN "$MODEL {{Loc.T("introuvable dans CUPS : PostScript générique", "not found in CUPS: generic PostScript")}}"
                 MODEL='drv:///sample.drv/generic.ppd'
             fi
 
@@ -84,7 +84,7 @@ public static class CupsScripts
                     rm -f /tmp/ezp-removed.$$
                 fi
             fi
-            if [ -n "$removed" ]; then pp Port OK "$URI (remplace :$removed)"; else pp Port OK "$URI"; fi
+            if [ -n "$removed" ]; then pp Port OK "$URI ({{Loc.T("remplace :", "replaces:")}}$removed)"; else pp Port OK "$URI"; fi
 
             pp Imprimante START ""
             add() { # $1 = adresse, $2 = modèle
@@ -95,7 +95,7 @@ public static class CupsScripts
             if [ $rc -ne 0 ] && { [ "$MODEL" = everywhere ] || [ "${MODEL#driverless:}" != "$MODEL" ]; }; then
                 # l'imprimante ne répond pas en IPP Everywhere : PostScript générique
                 out2=$(add "$FALLBACK_URI" 'drv:///sample.drv/generic.ppd'); rc=$?
-                if [ $rc -eq 0 ]; then pp Imprimante WARN "IPP / AirPrint impossible ($out), PostScript générique utilisé"
+                if [ $rc -eq 0 ]; then pp Imprimante WARN "{{Loc.T("IPP / AirPrint impossible", "IPP / AirPrint failed")}} ($out), {{Loc.T("PostScript générique utilisé", "generic PostScript used")}}"
                 else pp Imprimante FAIL "$out2"; exit 1; fi
             elif [ $rc -ne 0 ]; then
                 pp Imprimante FAIL "$out"; exit 1
@@ -108,15 +108,15 @@ public static class CupsScripts
             if [ "$DUPLEX" = 1 ]; then
                 lpadmin -p "$NAME" -o sides-default=two-sided-long-edge >/dev/null 2>&1
                 lpadmin -p "$NAME" -o Duplex=DuplexNoTumble >/dev/null 2>&1
-                pp Réglages OK "recto-verso par défaut, non partagée"
+                pp Réglages OK "{{Loc.T("recto-verso par défaut, non partagée", "duplex by default, not shared")}}"
             else
-                pp Réglages OK "non partagée"
+                pp Réglages OK "{{Loc.T("non partagée", "not shared")}}"
             fi
 
             pp État START ""
             cupsenable "$NAME" 2>/dev/null; cupsaccept "$NAME" 2>/dev/null
             st=$(lpstat -p "$NAME" 2>/dev/null | head -n 1)
-            if [ -n "$st" ]; then pp État OK "$st"; else pp État WARN "état inconnu"; fi
+            if [ -n "$st" ]; then pp État OK "$st"; else pp État WARN "{{Loc.T("état inconnu", "unknown status")}}"; fi
             printf '##PP|@name|OK|%s\n' "$NAME"
             exit 0
 
@@ -142,15 +142,15 @@ public static class CupsScripts
     {
         var sb = new StringBuilder(Header);
         sb.AppendLine($"NAME={Q(queue)}; SETDEF={(setDefault ? 1 : 0)}; TEST={(testPage ? 1 : 0)}");
-        sb.Append("""
+        sb.Append($$"""
             if [ "$SETDEF" = 1 ]; then
-                if out=$(lpoptions -d "$NAME" 2>&1); then pp 'Par défaut' OK "pour l'utilisateur $(id -un)"; else pp 'Par défaut' WARN "$out"; fi
+                if out=$(lpoptions -d "$NAME" 2>&1); then pp 'Par défaut' OK "{{Loc.T("pour l'utilisateur", "for user")}} $(id -un)"; else pp 'Par défaut' WARN "$out"; fi
             fi
             if [ "$TEST" = 1 ]; then
                 f=/usr/share/cups/data/testprint
                 if [ -f "$f" ]; then out=$(lp -d "$NAME" "$f" 2>&1)
                 else out=$(printf 'EZP - page de test\n\nImprimante : %s\nDate : %s\n' "$NAME" "$(date)" | lp -d "$NAME" -t "EZP test" 2>&1); fi
-                if [ $? -eq 0 ]; then pp 'Page de test' OK "envoyée ($out)"; else pp 'Page de test' WARN "$out"; fi
+                if [ $? -eq 0 ]; then pp 'Page de test' OK "{{Loc.T("envoyée", "sent")}} ($out)"; else pp 'Page de test' WARN "$out"; fi
             fi
             exit 0
 

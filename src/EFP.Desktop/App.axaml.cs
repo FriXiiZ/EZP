@@ -12,6 +12,7 @@ public partial class App : Application
     public override void OnFrameworkInitializationCompleted()
     {
         var settings = AppSettings.Load();
+        EFP.Core.Loc.Apply(settings.Language);
         RequestedThemeVariant = settings.Theme switch { "dark" => ThemeVariant.Dark, "light" => ThemeVariant.Light, _ => ThemeVariant.Default };
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             desktop.MainWindow = new MainWindow(settings);
